@@ -8,12 +8,13 @@ from objects import *
 '''
 
 if __name__ == '__main__':
-    pygame.init()  # 初始化pygame 虽然在这个简单的开关空白窗体看不出作用 但是默认把他写上是必要的 防止报错
-
-    screen = pygame.display.set_mode((800, 450))  # 设置一个400x400的空白窗体
-    screen.fill((0, 255, 255))  # 这里我们给空白窗体添加一个背景颜色
+    pygame.init()  # 初始化pygame
+    screen = pygame.display.set_mode((800, 450))  # 设置一个空白窗体
+    screen.fill((100, 255, 255))  # 这里我们给空白窗体添加一个背景颜色
     pygame.display.set_caption("转生到异世界之我的马桶和洗衣机想杀我")
     font = pygame.font.Font('STXINGKA.TTF', 36)
+    clock = pygame.time.Clock()
+    clock.tick(60)
 
     def display_text(text,x=400,y=225,color=(0,0,100)):
         text_suf = font.render(text, True, color)
@@ -41,7 +42,7 @@ class BgSprite(BaseSprite):
 
     # 定义一个更新函数
     def update(self):
-        self.rect.top += 10  # 每次向上移动10个像素
+        self.rect.top += 5  # 每次向上移动5个像素
         if self.rect.top >= 600:
             self.rect.top = -600
 
@@ -73,17 +74,17 @@ class PlayerSprite(BaseSprite):
         # 获取键盘事件 玩家移动
         key_pressed = pygame.key.get_pressed()
         # 按下键盘←键 向左移动
-        if key_pressed[pygame.K_LEFT] and self.rect.left > 0:
-            self.rect.left -= 8
+        if key_pressed[pygame.K_a] and self.rect.left > 0:
+            self.rect.left -= 2
         # 按下键盘→键 向右移动
-        elif key_pressed[pygame.K_RIGHT] and self.rect.right < 400:
-            self.rect.left += 8
+        elif key_pressed[pygame.K_d] and self.rect.right < 400:
+            self.rect.left += 2
         # 按下键盘↑键 向上移动
-        elif key_pressed[pygame.K_UP] and self.rect.top > 0:
-            self.rect.top -= 8
+        elif key_pressed[pygame.K_w] and self.rect.top > 0:
+            self.rect.top -= 2
         # 按下键盘↓键 向下移动
-        elif key_pressed[pygame.K_DOWN] and self.rect.bottom < 600:
-            self.rect.top += 8
+        elif key_pressed[pygame.K_s] and self.rect.bottom < 600:
+            self.rect.top += 2
 
 
 class PlayerManage:  # 构造玩家管理类
@@ -176,6 +177,7 @@ class Util:
         """
         if pygame.mouse.get_pressed()[0]:
             if sprite.rect.collidepoint(pygame.mouse.get_pos()):
+                display_text("攻击！")
                 return True
         return False
 
