@@ -1,252 +1,481 @@
+# -*- coding:utf-8 -*-
+
+import pygame as pg
 import sys
-import pygame
-import random
-'''
-from characters import *
-from enemies import *
-from objects import *
-'''
 
-if __name__ == '__main__':
-    pygame.init()  # 初始化pygame
-    screen = pygame.display.set_mode((800, 450))  # 设置一个空白窗体
-    screen.fill((100, 255, 255))  # 这里我们给空白窗体添加一个背景颜色
-    pygame.display.set_caption("转生到异世界之我的马桶和洗衣机想杀我")
-    font = pygame.font.Font('STXINGKA.TTF', 36)
-    clock = pygame.time.Clock()
-    clock.tick(60)
+from SceneManager import SceneManager
+from Settings import *
+from Player import Player
+from DialogBox import DialogBox
+import os
+from BattleBox import battle
 
-    def display_text(text,x=400,y=225,color=(0,0,100)):
-        text_suf = font.render(text, True, color)
-        text_rect = text_suf.get_rect()
-        text_rect.center = (x, y)
-        screen.blit(text_suf, text_rect)
-        pygame.display.flip()
+if os.path.isfile('dfc.txt'):
+    dfc = float(open('dfc.txt', 'r').read())
+else:
+    dfc = 1.0
+with open('dfc.txt', 'w') as f:
+    f.write(str(dfc))
 
 
-# 构造一个精灵父类
-class BaseSprite(pygame.sprite.Sprite):
-    def __init__(self, name):
-        super().__init__()
-        self.image = pygame.image.load(name)  # 加载图片
-        self.rect = self.image.get_rect()  # 获取rect的位置
+def fade_out(window,start_alpha,finish_alpha,interval):
+    bg_image = pg.image.load(GamePath.game_enter).convert_alpha()
+    bg_image = pg.transform.scale(bg_image, (WindowSettings.width, WindowSettings.height))
+    alpha = start_alpha
+    while alpha > finish_alpha:
+        window.fill((0, 0, 0))
+        bg_image.set_alpha(alpha)
+        print(bg_image.get_alpha())
+        window.blit(bg_image, (0, 0))
+        alpha -= interval
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                sys.exit()
+        pg.display.update()
+    pg.time.wait(300)
 
 
-# 构造一个背景精灵类 继承的精灵父类
-class BgSprite(BaseSprite):
-    # 初始化函数 加入参数name(需要加载的背景名) top_left（背景从哪里开始加载)
-    def __init__(self, name, location):
-        # 有精灵父类 必须调用
-        super().__init__(name)
-        self.rect.topleft = location  # 设置位置
+# 游戏主进程
+def run_game(player_name_input):
+    global fps, dfc
+    pg.init()
+    # 初始化背景音乐
+    pg.mixer.init()
+    if os.path.isfile('settings.txt'):
+        with open('settings.txt', 'r') as f:
+            volume = float(f.read())
+    else:
+        volume = 0.5
+    pg.mixer.music.set_volume(volume)
+    # 创建游戏窗口
+    window = pg.display.set_mode((WindowSettings.width, WindowSettings.height))
+    pg.display.set_caption(WindowSettings.name)
 
-    # 定义一个更新函数
-    def update(self):
-        self.rect.top += 5  # 每次向上移动5个像素
-        if self.rect.top >= 600:
-            self.rect.top = -600
+    # 开场动画
+    pg.mixer.Sound(GamePath.sound['game_enter']).play()
+    window.fill((0,0,0))
+    pg.time.wait(300)
+    fade_out(window, 255, 0, 0.5)
 
+    # 创建玩家
+    sprites = pg.sprite.Group()
+    player = Player(WindowSettings.width // 2, WindowSettings.height // 2, name=player_name_input)
+    sprites.add(player)
 
-# 构造一个背景精灵的管理类
-class BgManage:
-    # 定义初始化函数 传入Manage类的实例 方便把背景添加到screen上
-    def __init__(self, mg):
-        self.mg = mg
-        self.bg_group = pygame.sprite.Group()  # 添加一个背景精灵组
-        self.bg_sprite1 = BgSprite("img/begin2.png", (0, 0))  # 实例化两个背景精灵加入背景精灵组
-        self.bg_sprite1.add(self.bg_group)
-        self.bg_sprite2 = BgSprite("img/begin2.png", (0, -600))
-        self.bg_sprite2.add(self.bg_group)
+    # 清空buff槽
+    player.bag["力量药水"][1] = 0
+    player.bag["生命恢复药水"][1] = 0
+    player.bag["速度药水"][1] = 0
+    player.bag["抗性提升药水"][1] = 0
+    player.bag_update('力量药水', 0)
 
-    def update(self):
-        self.bg_group.update()
-        self.bg_group.draw(self.mg.screen)
+    paused = False
 
+    sceneManager = SceneManager(window, player)
+    text_count = -2
 
-class PlayerSprite(BaseSprite):
-    # 初始化函数 加入参数name(需要加载的图片) location（玩家从哪里开始加载)
-    def __init__(self, name, location):
-        # 有精灵父类 必须调用
-        super().__init__(name)
-        self.rect.topleft = location  # 设置位置
-
-    def update(self):
-        # 获取键盘事件 玩家移动
-        key_pressed = pygame.key.get_pressed()
-        # 按下键盘←键 向左移动
-        if key_pressed[pygame.K_a] and self.rect.left > 0:
-            self.rect.left -= 2
-        # 按下键盘→键 向右移动
-        elif key_pressed[pygame.K_d] and self.rect.right < 400:
-            self.rect.left += 2
-        # 按下键盘↑键 向上移动
-        elif key_pressed[pygame.K_w] and self.rect.top > 0:
-            self.rect.top -= 2
-        # 按下键盘↓键 向下移动
-        elif key_pressed[pygame.K_s] and self.rect.bottom < 600:
-            self.rect.top += 2
+    # 播放背景音乐
+    pg.mixer.music.load(GamePath.bgm[0])
+    pg.mixer.music.play(-1)
 
 
-class PlayerManage:  # 构造玩家管理类
-    def __init__(self, mg):
-        self.mg = mg
-        # 添加玩家精灵组
-        self.player_group = pygame.sprite.Group()
-        # 实例玩家精灵并加入到玩家精灵组
-        self.player_sprite = PlayerSprite("img2/me1.png", (150, 400))
-        self.player_sprite.add(self.player_group)
-
-    def update(self):
-        self.player_group.update()
-        self.player_group.draw(self.mg.screen)
-
-
-# 构造道具精灵类
-class PropSprite(BaseSprite):
-    # 初始化函数 加入参数name(需要加载的道具图片) center（道具加载的位置)
-    def __init__(self, name, center):
-        super().__init__(name)
-        self.rect.center = center
-
-    def update(self):
-        self.rect.top += 10
-        if self.rect.top >= 600:
-            self.kill()
-
-
-class PropManage:
-    def __init__(self, mg):
-        self.mg = mg
-        self.prop_group = pygame.sprite.Group()
-        self.time_count = 3  # 计时器
-
-    def update(self):
-        # 每过一段时间就会产生道具
-        self.time_count -= 0.1
-        if self.time_count <= 0:
-            self.time_count = 3
-            self.prop_sprite = PropSprite("prop.png", (random.randint(0, 370), 0))
-            self.prop_sprite.add(self.prop_group)
-        self.prop_group.update()
-        self.prop_group.draw(self.mg.screen)
-
-
-# 构造管理类管理精灵管理类
-class Manage:
-    def __init__(self):
-        pygame.init()
-        self.clock = pygame.time.Clock()
-        self.screen = pygame.display.set_mode((400, 600))
-        pygame.display.set_caption("会动的背景")
-        # 实例化背景精灵管理类
-        self.bg_manage = BgManage(self)
-        # 实例化玩家管理
-        self.player_manage = PlayerManage(self)
-        # 实例化道具管理
-        self.prop_manage = PropManage(self)
-
-    def run(self):
-        while True:
-            self.clock.tick(25)
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
+    while True:
+        esc_sgn = False
+        sceneManager.tick(fps)
+        keys = pg.key.get_pressed()
+        m_x, m_y = pg.mouse.get_pos()
+        # 对话时停止刷新背景
+        if not player.talking:
+            sceneManager.render()
+        x = 0
+        y = 0
+        # 循环处理事件
+        for event in pg.event.get():
+            match event.type:
+                # 退出游戏
+                case pg.QUIT:
+                    pg.quit()
+                    pg.mixer.quit()
                     sys.exit()
-            # 更新背景管理类中的内容
-            self.bg_manage.update()
-            self.player_manage.update()
-            self.prop_manage.update()
-            # 组与组之间的碰撞检测
-            result = pygame.sprite.groupcollide(self.player_manage.player_group, self.prop_manage.prop_group, False,
-                                                True)
-            if result:
-                print("吃到了道具")
 
-            pygame.display.flip()
+                # 场景传送
+                case GameEvent.EVENT_SWITCH:
+                    pg.mixer.Sound(GamePath.sound['flush_scene']).play()
+                    if sceneManager.state == GameState.GAME_PLAY_CITY:
+                        sceneManager.flush_scene(GameState.GAME_PLAY_WILD)
+                    else:
+                        sceneManager.flush_scene(GameState.GAME_PLAY_CITY)
+                    with open(GamePath.saves + "\\" + player.name + "\\" + "position.txt", 'w') as file:
+                        file.write(str(sceneManager.state))
+                case pg.MOUSEBUTTONDOWN:
+                    # 测试用，打印鼠标坐标
+                    if event.button == 1:
+                        x, y = event.pos
+                        print(x, y)
+                case pg.KEYDOWN:
+                    if event.key == pg.K_ESCAPE and not player.talking:
+                        esc_sgn = True
+                    if event.key == pg.K_m:
+                        player.attr_update(addCoins=5000)
+                    if event.key == pg.K_n:
+                        player.xp += 500
+                    # 更新对话
+                    if event.key == pg.K_SPACE:
+                        if sceneManager.state == GameState.GAME_PLAY_WILD:
+                            if player.talking and sceneManager.scene.shoppingBox is None:
+                                text_count += 1
+                        elif player.talking:
+                            text_count += 1
+                        print(text_count)
+                    # 更新商店
+                    if sceneManager.state == GameState.GAME_PLAY_WILD:
+                        if sceneManager.scene.shoppingBox is not None:
+                            for npc in sceneManager.scene.npcs.sprites():
+                                if npc.talking:
+                                    if event.key == pg.K_w:
+                                        sceneManager.scene.shoppingBox.sID = max(0,
+                                                                                 sceneManager.scene.shoppingBox.sID - 1)
+                                    elif event.key == pg.K_s:
+                                        sceneManager.scene.shoppingBox.sID = min(4,
+                                                                                 sceneManager.scene.shoppingBox.sID + 1)
+                                    elif event.key == pg.K_RETURN:
+                                        if sceneManager.scene.shoppingBox.sID == 4:
+                                            npc.talking = False
+                                            npc.reset_talk_CD()
+                                            player.talking = False
+                                            sceneManager.scene.shoppingBox = None
+                                        else:
+                                            sceneManager.scene.shoppingBox.buy()
+                    # CTRL或SHIFT键加速
+                    if event.key == pg.K_LCTRL or event.key == pg.K_LSHIFT:
+                        if not player.speed_up and player.stamina > 10:
+                            player.speed += 10
+                            player.speed_up = True
+                            print('加速')
+                        elif player.speed_up:
+                            player.speed -= 10
+                            player.speed_up = False
+                            print('减速')
+                        else:
+                            print('体力不足')
 
-class Util:
-    """
-    工具类： 提供静态方法
-    """
+        match sceneManager.state:
+            case GameState.GAME_PLAY_WILD | GameState.GAME_PLAY_CITY:
+                # 显示玩家信息
+                if not player.talking:
+                    offset = 0
+                    for t in player.text:
+                        window.blit(t, (1075, 20 + offset))
+                        offset += 20
+                    offset = 0
+                    for t in player.bag_text:
+                        window.blit(t, (45 + offset, 700))
+                        offset += 200
+                if player.information:
+                    window.blit(player.information[0], (0,0))
+                    player.information[1] -= 1
+                    if player.information[1] <= 0:
+                        player.information = None
+                # 调整游戏选项（暂停游戏）
+                if esc_sgn:
+                    (c_x, c_y) = (sceneManager.scene.cameraX, sceneManager.scene.cameraY)
+                    sceneManager.flush_scene(GameState.GAME_PAUSE)
+                    sceneManager.render()
+                    paused = True
+                    esc_sgn = False
+                # 城市场景
+                if sceneManager.state == GameState.GAME_PLAY_CITY and not player.talking:
+                    if text_count == -2 and player.talked == 0:
+                        player.talking = True
+                        text_count = 1
+                        dialogBox = DialogBox(window, GamePath.NPC, -1,
+                                              [[f'我叫{player.name}。', '是一名普通的大学生。'],
+                                               ["今天，当我从睡梦中醒来准备赶早八的时候，",
+                                                "忽然发现自己转生到了异世界！而且一看就是在二次元！(这小机器人是我吗？！)"],
+                                               ["（毕竟自己都已经变成纸片人了嘛）",
+                                                '不远处好像有两个漂亮妹子，一看就很好说话（？）', '去找她们问问情况吧。']])
+                        dialogBox.render()
+                        player.talked = 1
+                        continue
+                    player.update(keys, sceneManager.scene)
+                    player.draw(window)
+                    sceneManager.scene.update_camera(player)
+                    # 进入boss战
+                    boss = sceneManager.check_event_boss(player, keys)
+                    if boss is not None:
+                        sceneManager.flush_scene(GameState.GAME_BATTLE, boss)
+                        player.battle = True
+                        if player.speed_up:
+                            player.speed -= 10
+                            player.speed_up = False
+                        b = battle(player, boss, window, sceneManager, fps, dfc)
+                        if b == 1:
+                            player.kill()
+                            sceneManager.flush_scene(GameState.GAME_OVER)
+                            sceneManager.render()
+                        else:
+                            # 怪物被击败
+                            player.kill()
+                            sprites.empty()
+                            del sceneManager
+                            # 重新创建玩家
+                            player = Player(WindowSettings.width // 2, WindowSettings.height // 2,
+                                            name=player_name_input)
+                            sprites.add(player)
+                            # 恢复玩家信息
+                            with open(GamePath.saves + "\\" + player.name + "\\" + "player.txt", 'r') as p:
+                                lines = p.readlines()
+                                player.lvl = int(lines[0][3:-1])
+                                player.speed = float(lines[1][3:-1])
+                                player.attack = int(lines[2][3:-1])
+                                player.defence = int(lines[3][3:-1])
+                                player.HP = float(lines[4][3:-1].split(' / ')[0])
+                                player.maxHP = int(lines[4][3:-1].split(' / ')[1])
+                                player.money = int(lines[5][3:-1])
+                                player.xp = int(lines[6][3:-1].split(' / ')[0])
+                                player.gift_point = int(lines[7][3:-1])
+                                player.talked = int(lines[8][:])
+                            # 恢复玩家背包
+                            with open(GamePath.saves + "\\" + player.name + "\\" + "bag.txt", 'r') as q:
+                                lines = q.readlines()
+                                player.bag = eval(lines[0][:-1])
+                                player.equipment = eval(lines[1][:-1])
+                            # 清空buff槽
+                            player.bag["力量药水"][1] = 0
+                            player.bag["生命恢复药水"][1] = 0
+                            player.bag["速度药水"][1] = 0
+                            player.bag["抗性提升药水"][1] = 0
+                            player.bag_update('力量药水', 0)
+                            # 获得战胜奖励
+                            player.money += boss.lvl * 100
+                            player.xp += boss.lvl * 20
+                            # 重新设置游戏场景
+                            sceneManager = SceneManager(window, player)
+                            sceneManager.flush_scene(GameState.GAME_PLAY_CITY)
+                            sceneManager.render()
+                            player.update(keys, sceneManager.scene)
+                            sprites.draw(window)
+                            player.draw(window)
+                    # 进入对话
+                    dialogBox = sceneManager.check_event_talking(player, keys)
+                    if dialogBox is not None:
+                        text_count = 1
 
-    @staticmethod
-    def check_click(sprite):
-        # 如果是鼠标的左键
-        """
-        精灵的点击检测
-        """
-        if pygame.mouse.get_pressed()[0]:
-            if sprite.rect.collidepoint(pygame.mouse.get_pos()):
-                display_text("攻击！")
-                return True
-        return False
+                # 继续对话
+                elif sceneManager.state == GameState.GAME_PLAY_CITY and player.talking:
+                    sceneManager.render()
+                    cur_text = sceneManager.continue_talking(player, keys, dialogBox, text_count)
+                    text_count = cur_text
+                    # 结束对话
+                    if text_count == -1:
+                        for npc in sceneManager.scene.npcs.sprites():
+                            if npc.talking:
+                                npc.talking = False
+                                player.talking = False
+                                npc.reset_talk_CD()
+                                print("退出对话")
+                                dialogBox = None
+                                text_count = 0
+                                break
+                        else:
+                            player.talking = False
+                            dialogBox = None
+                            text_count = 0
 
+                # 野外场景
+                elif sceneManager.state == GameState.GAME_PLAY_WILD and not player.talking:
+                    player.update(keys, sceneManager.scene)
+                    player.draw(window)
+                    sceneManager.scene.update_camera(player)
+                    # 事件模块
+                    sceneManager.check_event_shopping(player, keys)
 
-# 创建ui精灵类 继承pygame精灵
-class UISprite(pygame.sprite.Sprite):
-    def __init__(self, name, center):
-        super().__init__()
-        self.image = pygame.image.load(name)
-        self.rect = self.image.get_rect()
-        self.rect.center = center
+                    # 战斗模块
+                    m = sceneManager.check_event_battle(player, keys)
+                    if m:
+                        # 进入战斗
+                        if player.speed_up:
+                            player.speed -= 10
+                            player.speed_up = False
+                        sceneManager.flush_scene(GameState.GAME_BATTLE, m)
+                        player.battle = True
+                        b = battle(player, m, window, sceneManager, fps, dfc)
+                        # 玩家被击败
+                        if b == 1:
+                            player.update(keys, sceneManager.scene)
+                            player.kill()
+                            sceneManager.flush_scene(GameState.GAME_OVER)
+                            sceneManager.render()
+                        else:
+                            # 怪物被击败
+                            player.kill()
+                            sprites.empty()
+                            del sceneManager
+                            # 重新创建玩家
+                            player = Player(WindowSettings.width // 2, WindowSettings.height // 2,
+                                            name=player_name_input)
+                            sprites.add(player)
+                            # 恢复玩家信息
+                            with open(GamePath.saves + "\\" + player.name + "\\" + "player.txt", 'r') as p:
+                                lines = p.readlines()
+                                player.lvl = int(lines[0][3:-1])
+                                player.speed = float(lines[1][3:-1])
+                                player.attack = int(lines[2][3:-1])
+                                player.defence = int(lines[3][3:-1])
+                                player.HP = float(lines[4][3:-1].split(' / ')[0])
+                                player.maxHP = int(lines[4][3:-1].split(' / ')[1])
+                                player.money = int(lines[5][3:-1])
+                                player.xp = int(lines[6][3:-1].split(' / ')[0])
+                                player.gift_point = int(lines[7][3:-1])
+                                player.talked = int(lines[8][:])
+                            # 恢复玩家背包
+                            with open(GamePath.saves + "\\" + player.name + "\\" + "bag.txt", 'r') as q:
+                                lines = q.readlines()
+                                player.bag = eval(lines[0][:-1])
+                                player.equipment = eval(lines[1][:-1])
+                            # 清空buff槽
+                            player.bag["力量药水"][1] = 0
+                            player.bag["生命恢复药水"][1] = 0
+                            player.bag["速度药水"][1] = 0
+                            player.bag["抗性提升药水"][1] = 0
+                            # 获得战胜奖励
+                            player.money += m.lvl ** 2 * 5
+                            player.xp += m.lvl * 10
+                            # 重新设置游戏场景
+                            sceneManager = SceneManager(window, player)
+                            sceneManager.flush_scene(GameState.GAME_PLAY_WILD)
+                            sceneManager.render()
+                            player.update(keys, sceneManager.scene)
+                            sprites.draw(window)
+                            player.draw(window)
+                    # 进入对话
+                    dialogBox = sceneManager.check_event_talking(player, keys)
+                    if dialogBox is not None:
+                        text_count = 1
 
-
-# 构造Ui精灵管理类
-class UIManage:
-    def __init__(self, gm):
-        self.gm = gm
-        self.foot = pygame.font.Font("font/font.ttf", 30)
-
-        # 创建一个游戏前的精灵组
-        self.ready_group = pygame.sprite.Group()
-        self.begin_btn = UISprite("img/begin_btn.png", (200, 300))
-        self.begin_btn.add(self.ready_group)
-
-        # 游戏结束
-        self.end_group = pygame.sprite.Group()
-        self.gm_over_btn = UISprite("img/begin_btn.png", (200, 300))
-        self.gm_over_btn.add(self.end_group)
-
-    def update(self):
-        # 游戏前有一个开始按钮
-        if self.gm.state == "ready":
-            self.ready_group.draw(self.gm.screen)
-            # 把开始精灵传入工具类
-            if Util.check_click(self.begin_btn):
-                # 状态切换到游戏中
-                self.gm.state = "gaming"
-        elif self.gm.state == "gaming":
-            # 游戏中会显示一个游戏分数的字体
-            self.gm.screen.blit(self.score_surface, (0, 0))
-        elif self.gm.state == "end":
-            # 游戏结束会出现重新开始按钮 点击重新开始会再次切换到游戏中
-            self.end_group.draw(self.gm.screen)
-            if Util.check_click(self.gm_over_btn):
-                self.gm.state = "gaming"
-
-
-class GameManage:
-    def __init__(self):
-        pygame.init()
-        self.screen = pygame.display.set_mode((400, 600))
-        self.state = "ready"
-        # 实例化UI精灵管理类
-        self.ui_manage = UIManage(self)
-
-    def run(self):
-        while True:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
+                # 继续对话/继续购物
+                elif sceneManager.state == GameState.GAME_PLAY_WILD and player.talking:
+                    sceneManager.render()
+                    if sceneManager.scene.shoppingBox is not None:
+                        sceneManager.check_event_shopping(player, keys)
+                    if dialogBox is not None:
+                        cur_text = sceneManager.continue_talking(player, keys, dialogBox, text_count)
+                        text_count = cur_text
+                        # 结束对话
+                        if text_count == -1:
+                            for npc in sceneManager.scene.npcs.sprites():
+                                if npc.talking:
+                                    npc.talking = False
+                                    npc.talked = True
+                                    player.talking = False
+                                    if npc.id == 0 or npc.id == 1:
+                                        npc.reset_talk_CD()
+                                    print("退出对话")
+                                    dialogBox = None
+                                    text_count = 0
+                                    break
+                            else:
+                                player.talking = False
+                                dialogBox = None
+                                text_count = 0
+            # 主菜单
+            case GameState.MAIN_MENU:
+                if esc_sgn:
+                    pg.quit()
                     sys.exit()
-                # 测试一键自杀 游戏结束
-                if event.type == pygame.KEYUP:
-                    if event.key == pygame.K_SPACE:
-                        self.state = "end"
-            self.screen.fill((0, 255, 255))
-            self.ui_manage.update()
-            pygame.display.flip()
+                # 选中按钮
+                if 485 <= m_x <= 857 and 184 <= m_y <= 301:
+                    sceneManager.scene.change_bg(1)
+                elif 590 <= m_x <= 752 and 368 <= m_y <= 474:
+                    sceneManager.scene.change_bg(2)
+                else:
+                    sceneManager.scene.change_bg(0)
+                # 点击按钮
+                if sceneManager.state == GameState.MAIN_MENU:
+                    if 485 <= x <= 857 and 184 <= y <= 301:
+                        if os.path.isfile(GamePath.saves + "\\" + player.name + "\\" + "position.txt"):
+                            with open(GamePath.saves + "\\" + player.name + "\\" + "position.txt", 'r') as f0:
+                                sceneManager.state = eval(f0.read())
+                                if sceneManager.state == GameState.GAME_PLAY_WILD:
+                                    sceneManager.flush_scene(GameState.GAME_PLAY_WILD)
+                                elif sceneManager.state == GameState.GAME_PLAY_CITY:
+                                    sceneManager.flush_scene(GameState.GAME_PLAY_CITY)
+                        else:
+                            sceneManager.flush_scene(GameState.GAME_PLAY_CITY)
+                    elif 590 <= x <= 752 and 368 <= y <= 474:
+                        sceneManager.flush_scene(GameState.GAME_PAUSE)
+            # 选项菜单
+            case GameState.GAME_PAUSE:
+                sceneManager.scene.buttons.draw(window)
+                # 拖动按钮
+                if pg.mouse.get_pressed()[0] == 1:
+                    for i in sceneManager.scene.buttons:
+                        if i.choosed:
+                            i.move(m_x)
+                            if i.index == 1:
+                                volume = round(((i.rect.center[0] - 493) / 427), 3)
+                                pg.mixer.music.set_volume(volume)
+                                with open("settings.txt", "w") as f1:
+                                    f1.write(str(volume))
+                            elif i.index == 2:
+                                with open('dfc.txt', 'w') as f1:
+                                    dfc_chr = round(((i.rect.center[0] - 493) / 427), 3) + 1
+                                    f1.write(str(dfc_chr))
+                                    dfc = dfc_chr
+                                    print(dfc)
+                            break
+                        if i.get_choosed(x, y):
+                            i.move(m_x)
+                            if i.index == 1:
+                                volume = round(((i.rect.center[0] - 493) / 427), 3)
+                                pg.mixer.music.set_volume(volume)
+                                with open("settings.txt", "w") as f1:
+                                    f1.write(str(volume))
+                            elif i.index == 2:
+                                with open('dfc.txt', 'w') as f1:
+                                    dfc_chr = round(((i.rect.center[0] - 493) / 427), 3) + 1
+                                    f1.write(str(dfc_chr))
+                                    dfc = dfc_chr
+                                    print(dfc)
+                            break
+
+                else:
+                    for i in sceneManager.scene.buttons:
+                        i.choosed = False
+                # 回到主菜单
+                if esc_sgn and not paused:
+                    sceneManager.flush_scene(GameState.MAIN_MENU)
+                    esc_sgn = False
+                # 取消暂停游戏
+                elif esc_sgn and paused:
+                    if os.path.isfile(GamePath.saves + "\\" + player.name + "\\" + "position.txt"):
+                        with open(GamePath.saves + "\\" + player.name + "\\" + "position.txt", 'r') as f0:
+                            sceneManager.state = eval(f0.read())
+                            if sceneManager.state == GameState.GAME_PLAY_WILD:
+                                sceneManager.flush_scene(GameState.GAME_PLAY_WILD)
+                            elif sceneManager.state == GameState.GAME_PLAY_CITY:
+                                sceneManager.flush_scene(GameState.GAME_PLAY_CITY)
+                    else:
+                        sceneManager.flush_scene(GameState.GAME_PLAY_CITY)
+                    (sceneManager.scene.cameraX, sceneManager.scene.cameraY) = (c_x,c_y)
+                    esc_sgn = False
+                    paused = False
+
+                pg.display.flip()
+                continue
+        # 更新屏幕
+        pg.display.flip()
 
 
-gm = Manage()
-gm.run()
+if __name__ == "__main__":
+    ori_dir = os.getcwd()
+    fps = 30
+    # 登录
+    import Account
+    player_name = Account.account_manager()
+    # player_name = 'player1'
+    if player_name:
+        # 开始游戏
+        os.chdir(ori_dir)
+        run_game(player_name)
