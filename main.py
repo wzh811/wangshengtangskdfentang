@@ -20,15 +20,14 @@ with open('dfc.txt', 'w') as f:
 
 
 # 用于生成简单的开场动画
-def fade_out(window, start_alpha, finish_alpha, interval):
-    bg_image = pg.image.load(GamePath.game_enter).convert_alpha()
-    bg_image = pg.transform.scale(bg_image, (WindowSettings.width, WindowSettings.height))
+def fade_out(window, image, start_alpha, finish_alpha, interval):
+    image = pg.transform.scale(image, (WindowSettings.width, WindowSettings.height))
     alpha = start_alpha
     while alpha > finish_alpha:
         window.fill((0, 0, 0))
-        bg_image.set_alpha(alpha)
-        # print(bg_image.get_alpha())
-        window.blit(bg_image, (0, 0))
+        image.set_alpha(alpha)
+        # print(image.get_alpha())
+        window.blit(image, (0, 0))
         alpha -= interval
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -62,7 +61,8 @@ def run_game(player_name_input):
     pg.mixer.Sound(GamePath.sound['game_enter']).play()
     window.fill((0, 0, 0))
     pg.time.wait(300)
-    fade_out(window, 255, 0, 0.5)
+    bg_image = pg.image.load(GamePath.game_enter).convert_alpha()
+    fade_out(window, bg_image,255, 0, 0.5)
 
     # 创建玩家
     sprites = pg.sprite.Group()
@@ -228,10 +228,57 @@ def run_game(player_name_input):
                             player.speed_up = False
                         b = battle(player, boss, window, sceneManager, fps, dfc)
                         if b == 1:
+                            # 玩家被击败
                             player.kill()
                             sceneManager.flush_scene(GameState.GAME_OVER)
                             sceneManager.render()
                         else:
+                            if boss.lvl == 11:
+                                with open(GamePath.saves + "\\" + player_name + "\\" + "NPCs.txt", 'r+') as n:
+                                    lines = n.readlines()
+                                    n.seek(0)
+                                    lines[0] = f'0,2\n'
+                                    n.writelines(lines)
+                                    n.truncate()
+                                    if lines[1] == '1,2\n':
+                                        sceneManager.flush_scene(GameState.GAME_WIN)
+                                        sceneManager.render()
+                                        offset = 0
+                                        texts = ['你成功战胜了你的马桶和洗衣机。',
+                                                 '虽然这看起来并不是什么值得骄傲的事。',
+                                                 f'但{player.name},你赢了。',
+                                                 'END']
+                                        for t in texts:
+                                            t = pg.font.Font(GamePath.font, 50).render(t,True, (255, 0, 255))
+                                            window.blit(t, (50, offset))
+                                            offset += 100
+                                        pg.display.flip()
+                                        pg.time.wait(8000)
+                                        bg_image = pg.image.load(GamePath.win).convert_alpha()
+                                        fade_out(window, bg_image, 255, 0, 1)
+                            elif boss.lvl == 12:
+                                with open(GamePath.saves + "\\" + player_name + "\\" + "NPCs.txt", 'r+') as n:
+                                    lines = n.readlines()
+                                    n.seek(0)
+                                    lines[1] = f'1,2\n'
+                                    n.writelines(lines)
+                                    n.truncate()
+                                    if lines[0] == '0,2\n':
+                                        sceneManager.flush_scene(GameState.GAME_WIN)
+                                        sceneManager.render()
+                                        offset = 0
+                                        texts = ['你成功战胜了你的马桶和洗衣机。',
+                                                 '虽然这看起来并不是什么值得骄傲的事。',
+                                                 f'但{player.name},你赢了。',
+                                                 'END']
+                                        for t in texts:
+                                            t = pg.font.Font(GamePath.font, 50).render(t, True, (255, 0, 255))
+                                            window.blit(t, (50, offset))
+                                            offset += 100
+                                        pg.display.flip()
+                                        pg.time.wait(8000)
+                                        bg_image = pg.image.load(GamePath.win).convert_alpha()
+                                        fade_out(window, bg_image, 255, 0, 1)
                             # 怪物被击败
                             player.kill()
                             sprites.empty()

@@ -39,11 +39,11 @@ class Monster(pg.sprite.Sprite):
                         break
                 else:
                     self.x = randint(540 + self.lvl * 300, 800 + self.lvl * 300)
-                    self.y = randint(80, WindowSettings.height * k - 500)
+                    self.y = randint(600, WindowSettings.height * k - 500)
                     n.write(f"{self.x},{self.y},{self.lvl}\n")
             else:
                 self.x = randint(540 + self.lvl * 300, 800 + self.lvl * 300)
-                self.y = randint(80, WindowSettings.height * k - 500)
+                self.y = randint(600, WindowSettings.height * k - 500)
                 n.write(f"{self.x},{self.y},{self.lvl}\n")
             n.close()
         else:
@@ -192,7 +192,7 @@ class XiaoJie(Monster):
         if self.knife_timer <= 0:
             pg.mixer.Sound(GamePath.sound['boss_shoot1']).play()
             self.knife_timer = 150
-            self.bullet_list2 = [Circle(self.rect.centerx, self.rect.centery, num=5, atk=self.attack // 10)]
+            self.bullet_list2 = [Circle(self.rect.centerx, self.rect.centery, num=5, atk=self.attack // 4)]
 
         if self.absorb_timer <= 0:
             if self.absorb_times < 2:

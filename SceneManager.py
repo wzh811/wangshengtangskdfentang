@@ -171,9 +171,12 @@ class SceneManager:
                 pg.mixer.music.play(-1)
             case GameState.GAME_OVER:
                 self.scene = Scene.OverScene(self.window, self.player)
+                pg.mixer.stop()
                 pg.mixer.Sound(GamePath.sound['over']).play()
             case GameState.GAME_WIN:
                 self.scene = Scene.WinScene(self.window, self.player)
+                pg.mixer.stop()
+                pg.mixer.Sound(GamePath.sound['level_up']).play()
             case GameState.GAME_PAUSE:
                 self.scene = Scene.PauseScene(self.window, self.player)
             case GameState.MAIN_MENU:

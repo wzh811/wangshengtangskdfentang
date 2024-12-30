@@ -12,7 +12,7 @@ import pygame as pg
 def battle(player, monster, window, scene_manager, fps, dfc=1.0):
     print('battle')
     level = monster.lvl
-    # 用于处理玩家死亡后停止脚步声
+    # 用于战斗结束后停止脚步声
     step_sound = None
 
     sprites = pg.sprite.Group()
