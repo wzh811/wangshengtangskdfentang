@@ -54,6 +54,9 @@ def run_game(player_name_input):
     # 创建游戏窗口
     window = pg.display.set_mode((WindowSettings.width, WindowSettings.height))
     pg.display.set_caption(WindowSettings.name)
+    # 更改游戏图标
+    icon = pg.image.load(r'.\assets\icon\icon.png')
+    pg.display.set_icon(icon)
 
     # 开场动画
     pg.mixer.Sound(GamePath.sound['game_enter']).play()
