@@ -7,8 +7,9 @@ from Monster import Monster
 import os
 
 
+# 障碍物类改造为箱子
 class Chest(pg.sprite.Sprite):
-    def __init__(self,index):
+    def __init__(self, index):
         super().__init__()
         k = WindowSettings.outdoorScale
         self.x = randint(100, WindowSettings.width * k - 100)
@@ -18,9 +19,9 @@ class Chest(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y)
         self.index = index
-        self.lvl = (index+1)//2
+        self.lvl = (index + 1) // 2
 
-    def update_pos(self,x,y):
+    def update_pos(self, x, y):
         self.x = x
         self.y = y
         self.rect.center = (x, y)
@@ -119,7 +120,7 @@ def gen_chests(player_name):
         n.close()
     else:
         n = open(GamePath.saves + "\\" + player_name + "\\" + "chests.txt", 'w')
-        for i in range(1,21):
+        for i in range(1, 21):
             lvl = (i + 1) // 2
             chest = Chest(i)
             chest.lvl = lvl

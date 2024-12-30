@@ -11,6 +11,7 @@ class NPC(pg.sprite.Sprite):
         k = WindowSettings.outdoorScale
         # self.x = randint(100, WindowSettings.width*k-100)
         # self.y = randint(100, WindowSettings.height*k-100)
+        # 固定位置生成NPC
         if num == 0:
             self.x = 100
             self.y = 100
@@ -59,5 +60,5 @@ class NPC(pg.sprite.Sprite):
         else:
             return not self.talking
 
-    def reset_talk_CD(self):
+    def reset_talk_cd(self):
         self.talk_CD = 150

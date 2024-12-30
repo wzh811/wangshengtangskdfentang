@@ -12,16 +12,20 @@ import pygame as pg
 def battle(player, monster, window, scene_manager, fps, dfc=1.0):
     print('battle')
     level = monster.lvl
+    # 用于处理玩家死亡后停止脚步声
+    step_sound = None
 
     sprites = pg.sprite.Group()
     sprites.add(player)
     # 重新生成战斗状态的怪物
     monster.kill()
     if monster.lvl == 11:
+        pg.mixer.Sound(GamePath.sound['boss_enter']).play()
         monster.rect.x = 1000
         monster.rect.y = 800
         monster = XiaoTong(player_name=player.name)
     elif monster.lvl == 12:
+        pg.mixer.Sound(GamePath.sound['boss_enter']).play()
         monster.rect.x = 1000
         monster.rect.y = 800
         monster = XiaoJie(player_name=player.name)
@@ -52,6 +56,7 @@ def battle(player, monster, window, scene_manager, fps, dfc=1.0):
     bomb_circles = []
     bomb_circle_count = 0
     kill_bomb_circle = 0
+    cd = 5 if player.lvl < 4 else 4
 
     while True:
         scene_manager.tick(fps)
@@ -61,17 +66,18 @@ def battle(player, monster, window, scene_manager, fps, dfc=1.0):
         # 重置瞬移CD
         try:
             start += 0
-        except Exception as e:
-            # print(e)
+        except:
             start = 0
         # 玩家被击杀判定
         if player.HP <= 0:
-            player.step = None
+            if step_sound:
+                step_sound.stop()
             monster.kill()
             return 1
         # 击杀怪物判定
         if monster.HP <= 0:
-            player.step = None
+            if step_sound:
+                step_sound.stop()
             monster.kill()
             return 0
         # 怪物发射子弹
@@ -119,7 +125,7 @@ def battle(player, monster, window, scene_manager, fps, dfc=1.0):
         for b in boss_bullets2:
             # 小洁的回旋镖需要小洁的坐标来更新
             if monster.lvl == 12:
-                b.update(monster.rect.centerx,monster.rect.centery)
+                b.update(monster.rect.centerx, monster.rect.centery)
                 if pg.sprite.collide_rect(b, player):
                     if player.damage:
                         player.HP -= b.atk * 80 / (80 + player.defence) * (1 - player.enchantment[1])
@@ -180,10 +186,24 @@ def battle(player, monster, window, scene_manager, fps, dfc=1.0):
             if event.type == pg.MOUSEBUTTONDOWN:
                 # 左键发射子弹
                 if event.button == 1:
-                    bullet1 = Bullet(player.rect.x, player.rect.y, 0, m_x, m_y,
+                    bullet1 = Bullet(player.rect.centerx, player.rect.centery, 0, m_x, m_y,
                                      atk=player.attack // 2)
                     bullets1.append(bullet1)
                     sprites.add(bullet1)
+                    # 7级后获得三发弹
+                    if player.lvl >= 7:
+                        bullet2 = Bullet(player.rect.midtop[0], player.rect.midtop[1],
+                                         0, m_x, m_y, atk=player.attack // 4)
+                        bullet2.direction_x = bullet1.direction_x
+                        bullet2.direction_y = bullet1.direction_y
+                        bullet3 = Bullet(player.rect.midbottom[0], player.rect.midbottom[1],
+                                         0, m_x, m_y, atk=player.attack // 4)
+                        bullet3.direction_x = bullet1.direction_x
+                        bullet3.direction_y = bullet1.direction_y
+                        bullets1.append(bullet2)
+                        bullets1.append(bullet3)
+                        sprites.add(bullet2)
+                        sprites.add(bullet3)
                 # 右键安放炸弹
                 if event.button == 3:
                     bullet2 = Bomb(player.rect.x, player.rect.y, 1, m_x, m_y,
@@ -208,7 +228,7 @@ def battle(player, monster, window, scene_manager, fps, dfc=1.0):
                     else:
                         print('体力不足')
                 # 空格键瞬移
-                if event.key == pg.K_SPACE and time.time() - start > 5:
+                if event.key == pg.K_SPACE and time.time() - start > cd:
                     if WindowSettings.width / 16 < m_x < WindowSettings.width / 16 * 15:
                         m_x = m_x
                     elif m_x <= WindowSettings.width / 16:
@@ -227,15 +247,18 @@ def battle(player, monster, window, scene_manager, fps, dfc=1.0):
                 # 喝药
                 if event.key == pg.K_1 and player.bag["力量药水"][0] > 0 and player.bag["力量药水"][1] < 2:
                     player.attack += 5
+                    if player.lvl == 10:
+                        player.attack += 4
                     player.bag["力量药水"][1] += 1
                     player.bag_update("力量药水", -1)
                     if player.bag["力量药水"][1] == 1:
                         pg.time.set_timer(BattleEvent.Strength_time_over, 10000, loops=1)
                     else:
                         pg.time.set_timer(BattleEvent.Strength_time_over1, 10000, loops=1)
-                    print('加5点攻击')
                 if event.key == pg.K_2 and player.bag["生命恢复药水"][0] > 0 and player.bag["生命恢复药水"][1] < 11:
                     player.HP += 5
+                    if player.lvl == 10:
+                        player.HP += 4
                     if player.HP > player.maxHP:
                         player.HP = player.maxHP
                     player.bag["生命恢复药水"][1] += 10
@@ -244,25 +267,26 @@ def battle(player, monster, window, scene_manager, fps, dfc=1.0):
                         pg.time.set_timer(BattleEvent.Life_add, 500, loops=10)
                     else:
                         pg.time.set_timer(BattleEvent.Life_add1, 500, loops=10)
-                    print('生命恢复')
                 if event.key == pg.K_3 and player.bag["速度药水"][0] > 0 and player.bag["速度药水"][1] < 2:
                     player.speed += 5
+                    if player.lvl == 10:
+                        player.speed += 3
                     player.bag["速度药水"][1] += 1
                     player.bag_update("速度药水", -1)
                     if player.bag["速度药水"][1] == 1:
                         pg.time.set_timer(BattleEvent.Speed_time_over, 7000, loops=1)
                     else:
                         pg.time.set_timer(BattleEvent.Speed_time_over1, 7000, loops=1)
-                    print('加5点速度')
                 if event.key == pg.K_4 and player.bag["抗性提升药水"][0] > 0 and player.bag["抗性提升药水"][1] < 2:
                     player.defence += 7
+                    if player.lvl == 10:
+                        player.defence += 5
                     player.bag["抗性提升药水"][1] += 1
                     player.bag_update("抗性提升药水", -1)
                     if player.bag["抗性提升药水"][1] == 1:
                         pg.time.set_timer(BattleEvent.Defence_time_over, 10000, loops=1)
                     else:
                         pg.time.set_timer(BattleEvent.Defence_time_over1, 10000, loops=1)
-                    print('加7点防御')
             # 清除爆炸动画
             if 0 < event.type <= kill_bomb_circle:
                 for i in bomb_circles:
@@ -283,6 +307,8 @@ def battle(player, monster, window, scene_manager, fps, dfc=1.0):
                 print('力量恢复1')
             if event.type == BattleEvent.Life_add:
                 player.HP += 1
+                if player.lvl == 10:
+                    player.HP += 0.5
                 if player.HP > player.maxHP:
                     player.HP = player.maxHP
                 player.bag["生命恢复药水"][1] -= 1
@@ -321,7 +347,9 @@ def battle(player, monster, window, scene_manager, fps, dfc=1.0):
         if player.HP > player.maxHP:
             player.HP = player.maxHP
         # 更新玩家状态
-        player.update(keys, scene_manager.scene)
+        step = player.update(keys, scene_manager.scene)
+        if step:
+            step_sound = step
         # 更新玩家子弹
         if bullets1:
             for i in bullets1:

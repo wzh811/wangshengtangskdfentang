@@ -19,7 +19,8 @@ class Bullet(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
         speed = BulletSettings.bulletSpeed[num]
-        if num == 0 or num == 2 or num == 4:
+        # 子弹飞行（0,2,4分别为玩家子弹，怪物子弹，boss子弹）
+        if num // 2 == 0:
             if m_x == x:
                 if m_y > y:
                     self.direction_x = 0
@@ -36,7 +37,8 @@ class Bullet(pg.sprite.Sprite):
     def update(self):
         self.rect.x = self.rect.x+self.direction_x
         self.rect.y = self.rect.y+self.direction_y
-        if self.rect.y <= 0 or self.rect.x <= 0 or self.rect.y > WindowSettings.height or self.rect.x > WindowSettings.width:
+        if self.rect.y <= 0 or self.rect.x <= 0 or\
+                self.rect.y > WindowSettings.height or self.rect.x > WindowSettings.width:
             self.delete = True
 
 
@@ -60,6 +62,7 @@ class Bomb(Bullet):
         self.rect.y -= dy
 
 
+# 环形子弹（仅用于boss小洁的回旋镖）
 class Circle(Bullet):
     def __init__(self, x, y, num, m_x=0, m_y=0, atk=0, radius=120, alive=True):
         super().__init__(x, y, num, m_x, m_y, atk, alive)

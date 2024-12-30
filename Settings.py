@@ -24,7 +24,6 @@ class SceneSettings:
 
 
 class GamePath:
-
     game_enter = r'.\assets\menu\start.png'
 
     player = [r'.\assets\player\player1.png']
@@ -38,19 +37,19 @@ class GamePath:
            r'.\assets\music\wild_scene.mp3']
 
     sound = {
-             'bomb': r'.\assets\sound\bomb.mp3',
-             'boss_enter':r'.\assets\sound\boss_enter.mp3',
-             'boss_shoot1':r'.\assets\sound\boss_shoot1.mp3',
-             'boss_shoot2':r'.\assets\sound\boss_shoot2.mp3',
-             'flush_scene':r'.\assets\sound\flush_scene.mp3',
-             'game_enter':r'.\assets\sound\game_enter.mp3',
-             'level_up':r'.\assets\sound\level_up.mp3',
-             'monster_be_hit':r'.\assets\sound\monster_be_hit.mp3',
-             'open_chest':r'.\assets\sound\open_chest.mp3',
-             'over':r'.\assets\sound\over.mp3',
-             'player_be_hit':r'.\assets\sound\player_be_hit.mp3',
-             'purchase':r'.\assets\sound\purchase.mp3',
-             'step':r'.\assets\sound\step.mp3'
+        'bomb': r'.\assets\sound\bomb.mp3',
+        'boss_enter': r'.\assets\sound\boss_enter.mp3',
+        'boss_shoot1': r'.\assets\sound\boss_shoot1.mp3',
+        'boss_shoot2': r'.\assets\sound\boss_shoot2.mp3',
+        'flush_scene': r'.\assets\sound\flush_scene.mp3',
+        'game_enter': r'.\assets\sound\game_enter.mp3',
+        'level_up': r'.\assets\sound\level_up.mp3',
+        'monster_be_hit': r'.\assets\sound\monster_be_hit.mp3',
+        'open_chest': r'.\assets\sound\open_chest.mp3',
+        'over': r'.\assets\sound\over.mp3',
+        'player_be_hit': r'.\assets\sound\player_be_hit.mp3',
+        'purchase': r'.\assets\sound\purchase.mp3',
+        'step': r'.\assets\sound\step.mp3'
     }
 
     voice = [
@@ -77,19 +76,19 @@ class GamePath:
               r'.\assets\bullet\knife.png']
 
     monster = [
-               r'.\assets\monster\monster.png',
-               r'.\assets\monster\monster1.png',
-               r'.\assets\monster\monster2.png',
-               r'.\assets\monster\monster3.png',
-               r'.\assets\monster\monster4.png',
-               r'.\assets\monster\monster5.png',
-               r'.\assets\monster\monster6.png',
-               r'.\assets\monster\monster7.png',
-               r'.\assets\monster\monster8.png',
-               r'.\assets\monster\monster9.png',
-               r'.\assets\monster\monster10.png',
-               r'.\assets\monster\xiaotong.png',
-               r'.\assets\monster\xiaojie.png'
+        r'.\assets\monster\monster.png',
+        r'.\assets\monster\monster1.png',
+        r'.\assets\monster\monster2.png',
+        r'.\assets\monster\monster3.png',
+        r'.\assets\monster\monster4.png',
+        r'.\assets\monster\monster5.png',
+        r'.\assets\monster\monster6.png',
+        r'.\assets\monster\monster7.png',
+        r'.\assets\monster\monster8.png',
+        r'.\assets\monster\monster9.png',
+        r'.\assets\monster\monster10.png',
+        r'.\assets\monster\xiaotong.png',
+        r'.\assets\monster\xiaojie.png'
     ]
 
     groundTiles = [
@@ -109,7 +108,6 @@ class GamePath:
         r'.\assets\tiles\city5.png',
         r'.\assets\tiles\city6.png'
     ]
-
 
     battle = r'.\assets\tiles\battle.png'
 
@@ -200,7 +198,7 @@ class DialogSettings:
 
 class ShopSettings:
     boxWidth = 1000
-    boxHeight = 300
+    boxHeight = 350
     npcWidth = 160
     npcHeight = 200
     boxStartX = 160

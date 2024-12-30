@@ -78,8 +78,8 @@ class Scene:
                     self.window.blit(self.map[i][j],
                                      (SceneSettings.tileWidth * i - self.cameraX,
                                       SceneSettings.tileHeight * j - self.cameraY))
-        elif self.type in [SceneType.BATTLE,SceneType.OVER,SceneType.WIN]:
-            self.window.blit(self.map,(0,0))
+        elif self.type in [SceneType.BATTLE, SceneType.OVER, SceneType.WIN]:
+            self.window.blit(self.map, (0, 0))
 
         self.chests.draw(self.window)
         self.npcs.draw(self.window)
@@ -122,7 +122,7 @@ class WildScene(Scene):
             for i in monsters:
                 self.monsters.add(i)
         else:
-            for i in range(1,11):
+            for i in range(1, 11):
                 monster = Monster(i, player.name)
                 self.monsters.add(monster)
         self.npcs.add(NPC(2, player.name))
@@ -215,15 +215,15 @@ class PauseScene(MainMenu):
         self.bg = pg.image.load(GamePath.pause_menu)
         self.bg = pg.transform.scale(self.bg, (WindowSettings.width, WindowSettings.height))
         if os.path.isfile('settings.txt'):
-            with open('settings.txt','r') as f2:
+            with open('settings.txt', 'r') as f2:
                 volume = float(f2.read())
-                pos1 = volume*427+493
+                pos1 = volume * 427 + 493
         else:
             pos1 = 706
         if os.path.isfile('dfc.txt'):
-            with open('dfc.txt','r') as f3:
+            with open('dfc.txt', 'r') as f3:
                 dfc = float(f3.read())
-                pos2 = (dfc-1)*427+493
+                pos2 = (dfc - 1) * 427 + 493
         else:
             pos2 = 493
         button1 = Button(pos1, 244, 1)

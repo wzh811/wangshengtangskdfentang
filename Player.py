@@ -10,26 +10,30 @@ from random import randint
 class Player(pg.sprite.Sprite):
     def __init__(self, x, y, name):
         super().__init__()
+        # 玩家名=用户名
         self.name = name
         self.index = 0
         self.images = [pg.transform.scale(pg.image.load(img), (PlayerSettings.playerWidth, PlayerSettings.playerHeight))
                        for img in GamePath.player]
         self.image = self.images[self.index]
-
+        # 用于处理等级不足无法开箱子的消息显示，或许之后会有其他用途
         self.information = []
-
+        # 玩家位置
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
-
+        # 用于处理玩家冲刺
         self.speed_up = False
-        self.talking = False
-        self.damage = True
-        self.step = None
-
         self.stamina = 100
+        # 用于处理对话
+        self.talking = False
+        # 开启玩家受伤
+        self.damage = True
+        # 用于处理玩家脚步声
+        self.step = None
+        # 用于处理战斗
         self.battle = False
         # 读取玩家信息，没有玩家信息则初始化
-        with open(GamePath.saves+"\\"+self.name+"\\"+"player.txt", 'r') as f:
+        with open(GamePath.saves + "\\" + self.name + "\\" + "player.txt", 'r') as f:
             lines = f.readlines()
             if lines:
                 self.lvl = int(lines[0][3:-1])
@@ -54,8 +58,8 @@ class Player(pg.sprite.Sprite):
                 self.gift_point = 5
                 self.talked = 0
         # 读取玩家背包内容（药水和护甲）
-        if os.path.isfile(GamePath.saves+"\\"+self.name+"\\"+"bag.txt"):
-            with open(GamePath.saves+"\\"+self.name+"\\"+"bag.txt", 'r') as f:
+        if os.path.isfile(GamePath.saves + "\\" + self.name + "\\" + "bag.txt"):
+            with open(GamePath.saves + "\\" + self.name + "\\" + "bag.txt", 'r') as f:
                 lines = f.readlines()
                 self.bag = eval(lines[0][:-1])
                 self.equipment = eval(lines[1][:-1])
@@ -70,12 +74,13 @@ class Player(pg.sprite.Sprite):
                 self.swiftness = enchantment[5]
                 '''
         else:
-            with open(GamePath.saves+"\\"+self.name+"\\"+"bag.txt", 'w') as f:
+            with open(GamePath.saves + "\\" + self.name + "\\" + "bag.txt", 'w') as f:
                 self.bag = {'力量药水': [0, 0], '生命恢复药水': [0, 0], '速度药水': [0, 0], '抗性提升药水': [0, 0]}
-                self.equipment = {'头盔':[0,0,0,0,0,0,0],'胸甲':[0,0,0,0,0,0,0],'护腿':[0,0,0,0,0,0,0],'靴子':[0,0,0,0,0,0,0]}
-                f.write(str(self.bag)+"\n")
-                f.write(str(self.equipment)+"\n")
-                self.enchantment = (0,0,0,0,0,0)
+                self.equipment = {'头盔': [0, 0, 0, 0, 0, 0, 0], '胸甲': [0, 0, 0, 0, 0, 0, 0],
+                                  '护腿': [0, 0, 0, 0, 0, 0, 0], '靴子': [0, 0, 0, 0, 0, 0, 0]}
+                f.write(str(self.bag) + "\n")
+                f.write(str(self.equipment) + "\n")
+                self.enchantment = (0, 0, 0, 0, 0, 0)
 
         text = [f'玩家名：{self.name}',
                 f'等级：{self.lvl}',
@@ -84,7 +89,7 @@ class Player(pg.sprite.Sprite):
                 f'防御力：{self.defence}',
                 f'生命值：{self.HP:.1f} / {self.maxHP}',
                 f'资金：{self.money}',
-                f'经验：{self.xp} / {PlayerSettings.playerXP[self.lvl+1]}',
+                f'经验：{self.xp} / {PlayerSettings.playerXP[self.lvl + 1]}',
                 f'天赋：{self.gift_point}',
                 f'体力：{int(self.stamina)}%'
                 ]
@@ -92,37 +97,37 @@ class Player(pg.sprite.Sprite):
         self.bag_text = [pg.font.Font(GamePath.font, 18).render(f'{item}：{num}', True, (255, 255, 0, 120)) for
                          item, num in self.bag.items()]
 
+    # 整合装备提供的附魔属性，便于伤害计算
     def calc_enchantment(self):
         enchantment = [0, 0, 0, 0, 0, 0, 0]
-        enchantment[self.equipment['头盔'][1]] += Enchantment_effect.all[
+        enchantment[self.equipment['头盔'][1]] += EnchantmentEffect.all[
             self.equipment['头盔'][1]][self.equipment['头盔'][2]]
-        enchantment[self.equipment['头盔'][3]] += Enchantment_effect.all[
+        enchantment[self.equipment['头盔'][3]] += EnchantmentEffect.all[
             self.equipment['头盔'][3]][self.equipment['头盔'][4]]
-        enchantment[self.equipment['头盔'][5]] += Enchantment_effect.all[
+        enchantment[self.equipment['头盔'][5]] += EnchantmentEffect.all[
             self.equipment['头盔'][5]][self.equipment['头盔'][6]]
 
-        enchantment[self.equipment['胸甲'][1]] += Enchantment_effect.all[
+        enchantment[self.equipment['胸甲'][1]] += EnchantmentEffect.all[
             self.equipment['胸甲'][1]][self.equipment['胸甲'][2]]
-        enchantment[self.equipment['胸甲'][3]] += Enchantment_effect.all[
+        enchantment[self.equipment['胸甲'][3]] += EnchantmentEffect.all[
             self.equipment['胸甲'][3]][self.equipment['胸甲'][4]]
-        enchantment[self.equipment['胸甲'][5]] += Enchantment_effect.all[
+        enchantment[self.equipment['胸甲'][5]] += EnchantmentEffect.all[
             self.equipment['胸甲'][5]][self.equipment['胸甲'][6]]
 
-        enchantment[self.equipment['护腿'][1]] += Enchantment_effect.all[
+        enchantment[self.equipment['护腿'][1]] += EnchantmentEffect.all[
             self.equipment['护腿'][1]][self.equipment['护腿'][2]]
-        enchantment[self.equipment['护腿'][3]] += Enchantment_effect.all[
+        enchantment[self.equipment['护腿'][3]] += EnchantmentEffect.all[
             self.equipment['护腿'][3]][self.equipment['护腿'][4]]
-        enchantment[self.equipment['护腿'][5]] += Enchantment_effect.all[
+        enchantment[self.equipment['护腿'][5]] += EnchantmentEffect.all[
             self.equipment['护腿'][5]][self.equipment['护腿'][6]]
 
-        enchantment[self.equipment['靴子'][1]] += Enchantment_effect.all[
+        enchantment[self.equipment['靴子'][1]] += EnchantmentEffect.all[
             self.equipment['靴子'][1]][self.equipment['靴子'][2]]
-        enchantment[self.equipment['靴子'][3]] += Enchantment_effect.all[
+        enchantment[self.equipment['靴子'][3]] += EnchantmentEffect.all[
             self.equipment['靴子'][3]][self.equipment['靴子'][4]]
-        enchantment[self.equipment['靴子'][5]] += Enchantment_effect.all[
+        enchantment[self.equipment['靴子'][5]] += EnchantmentEffect.all[
             self.equipment['靴子'][5]][self.equipment['靴子'][6]]
         return tuple(enchantment[1:])
-
 
     def bag_update(self, item, num):
         if item in self.bag:
@@ -131,16 +136,18 @@ class Player(pg.sprite.Sprite):
             self.equipment[item] = num
         # 更新背包并自动存档
         with open(GamePath.saves + "\\" + self.name + "\\" + "bag.txt", 'w') as p:
-            p.write(str(self.bag)+"\n")
-            p.write(str(self.equipment)+"\n")
+            p.write(str(self.bag) + "\n")
+            p.write(str(self.equipment) + "\n")
             self.enchantment = self.calc_enchantment()
 
     def attr_update(self, addCoins=0, addHP=0, addmaxHP=0, addAttack=0, addDefence=0, addSpeed=0, addgift_point=0):
         if self.HP + addHP < 0:
             return
         self.money += addCoins
+        # 购买音效
         if addCoins < 0:
             pg.mixer.Sound(GamePath.sound['purchase']).play()
+        # 更新属性并自动保存
         self.HP += addHP
         self.attack += addAttack
         self.defence += addDefence
@@ -182,26 +189,26 @@ class Player(pg.sprite.Sprite):
             self.bag_text = [pg.font.Font(GamePath.font, 18).render(f'{item}：{num[0]}', True, (255, 255, 0, 120)) for
                              item, num in self.bag.items()]
             with open(GamePath.saves + "\\" + self.name + "\\" + "player.txt", 'w') as p:
-                for i in range(1, len(text)-1):
+                for i in range(1, len(text) - 1):
                     if i == 2 and self.speed_up:
                         text[i] = text[i][0:3] + str(self.speed - 10)
-                    p.write(text[i]+"\n")
+                    p.write(text[i] + "\n")
                 p.write(str(self.talked))
-        # 加速状态消耗体力，不加速时以0.5倍速回复体力,敏捷附魔可以增加回复体力的速度，减缓消耗体力的速度
+            # 加速状态消耗体力，不加速时以0.5倍速回复体力（敏捷附魔可以增加回复体力的速度，减缓消耗体力的速度）
             if self.speed_up:
-                self.stamina -= 1 - self.enchantment[5]/10
+                self.stamina -= 1 - self.enchantment[5] / 10
                 if self.stamina <= 0:
                     self.speed_up = False
                     self.speed -= 10
             else:
-                self.stamina += 0.5 * (1 + self.enchantment[5]/10)
+                self.stamina += 0.5 * (1 + self.enchantment[5] / 10)
                 if self.stamina > 100:
                     self.stamina = 100
         else:
             self.bag_text = [pg.font.Font(GamePath.font, 18).render(f'{item}：{num}', True, (255, 255, 0, 120)) for
                              item, num in self.bag.items()]
             if self.speed_up:
-                self.stamina -= 1 - self.enchantment[5]/10
+                self.stamina -= 1 - self.enchantment[5] / 10
                 if self.stamina <= 0:
                     self.speed_up = False
                     self.speed -= 5 + self.enchantment[5]
@@ -242,26 +249,26 @@ class Player(pg.sprite.Sprite):
                     if pg.sprite.collide_rect(self, chest) and self.lvl >= chest.lvl:
                         pg.mixer.Sound(GamePath.sound['open_chest']).play()
                         self.rect = self.rect.move(-dx, -dy)
-                        m = randint(10,50) * chest.lvl
-                        p = randint(5,10) * chest.lvl
+                        m = randint(10, 50) * chest.lvl
+                        p = randint(5, 10) * chest.lvl
                         self.money += m
                         self.xp += p
                         self.information = [pg.font.Font(GamePath.font, 50).render(
                             f'经验增加{p}点！资金增加{m}！', True, (255, 0, 255)), 60]
-                        c = open(GamePath.saves + "\\" + self.name + "\\" + "chests.txt",'r')
+                        # 删除开过的箱子
+                        c = open(GamePath.saves + "\\" + self.name + "\\" + "chests.txt", 'r')
                         lines = c.readlines()
                         for line in lines:
                             if line[:-1].split(',')[2] == str(chest.index):
                                 lines.remove(line)
-                                print("Found Chest")
                                 break
                         c.close()
-                        with open(GamePath.saves + "\\" + self.name + "\\" + "chests.txt",'w') as c:
+                        with open(GamePath.saves + "\\" + self.name + "\\" + "chests.txt", 'w') as c:
                             c.writelines(lines)
                         chest.kill()
                     elif pg.sprite.collide_rect(self, chest):
                         self.information = [pg.font.Font(GamePath.font, 50).render(
-                            f'等级不足！需要{chest.lvl}级才能打开！',True,(255,0,255)), 60]
+                            f'等级不足！需要{chest.lvl}级才能打开！', True, (255, 0, 255)), 60]
 
             # 传送门判定
             if pg.sprite.spritecollide(self, scene.portals, False, pg.sprite.collide_mask):
@@ -289,6 +296,7 @@ class Player(pg.sprite.Sprite):
                 self.index = (self.index +1) % len(self.images)
                 self.image = self.images[self.index]
             '''
+        return self.step
 
     def draw(self, window):
         window.blit(self.image, self.rect)

@@ -2,7 +2,7 @@
 
 import pygame as pg
 from Settings import *
-from Monster import Monster,XiaoTong,XiaoJie
+from Monster import *
 from DialogBox import DialogBox
 import Scene
 import ShoppingBox
@@ -31,7 +31,7 @@ class SceneManager:
                                                                             "防御力+1": "资金-15",
                                                                             "速度+0.5": "资金-15",
                                                                             "最大生命值+2": "资金-15",
-                                                                            "EXIT": ""}, id=0)
+                                                                            "EXIT": ""}, index=0)
                 # 小花，消耗资金购买药水
                 elif npc.id == 3:
                     self.scene.shoppingBox = ShoppingBox.ShoppingBox(self.window, GamePath.NPC[3], player,
@@ -39,7 +39,7 @@ class SceneManager:
                                                                             "生命恢复药水": "资金-10",
                                                                             "抗性提升药水": "资金-10",
                                                                             "速度药水": "资金-10",
-                                                                            "EXIT": ""}, id=1)
+                                                                            "EXIT": ""}, index=1)
                 # 小白，消耗资金和经验值为装备附魔（集齐全套护甲才可进行附魔）
                 elif npc.id == 4:
                     if 0 in (player.equipment['头盔'][0], player.equipment['胸甲'][0],
@@ -49,22 +49,24 @@ class SceneManager:
                                                                                 "胸甲（防御+10）": "资金-500",
                                                                                 "护腿（防御+8）": "资金-400",
                                                                                 "靴子（防御+5）": "资金-250",
-                                                                                "EXIT": ""}, id=2)
+                                                                                "EXIT": ""}, index=2)
                     else:
                         self.scene.shoppingBox = ShoppingBox.ShoppingBox(self.window, GamePath.NPC[4], player,
                                                                          items={"头盔附魔(祛魔)": "经验-20，资金-200",
                                                                                 "胸甲附魔(祛魔)": "经验-20，资金-200",
                                                                                 "护腿附魔(祛魔)": "经验-20，资金-200",
                                                                                 "靴子附魔(祛魔)": "经验-20，资金-200",
-                                                                                "EXIT": ""}, id=3)
+                                                                                "EXIT": ""}, index=3)
                 self.scene.shoppingBox.render()
 
     def check_event_talking(self, player, keys):
-        r = []
+        if_talked = []
+        voice = None
+        dialogBoxTemp = None
         for npc in self.scene.npcs.sprites():
             if self.state == GameState.GAME_PLAY_CITY:
                 p = npc.talked
-                r.append(p)
+                if_talked.append(p)
             if pg.sprite.collide_rect(player, npc) and npc.can_talk():
                 npc.talking = True
                 player.talking = True
@@ -75,7 +77,7 @@ class SceneManager:
                                                 '主人天天往我肚子里放脏东西，人家实在是受不了啊！'],
                                                ["所以，对不起了主人！我要杀了你！！！",
                                                 "接招吧，旋风水龙卷！"]])
-                    pg.mixer.Sound(GamePath.voice[0]).play()
+                    voice = pg.mixer.Sound(GamePath.voice[0])
 
                 elif npc.id == 1:
                     dialogBoxTemp = DialogBox(self.window, GamePath.NPC, 1,
@@ -83,14 +85,14 @@ class SceneManager:
                                                 '主人天天往我肚子里放脏衣服，人家实在是受不了啊！'],
                                                ["所以，对不起了主人！我要杀了你！！！",
                                                 "接招吧，轰隆隆冲击波！！"]])
-                    pg.mixer.Sound(GamePath.voice[1]).play()
+                    voice = pg.mixer.Sound(GamePath.voice[1])
                 elif npc.id == 2 and not npc.talked:
                     dialogBoxTemp = DialogBox(self.window, GamePath.NPC, 2,
                                               [['主人，我是小米。是你的手机变的！',
                                                 '主人对我很好，我也很喜欢主人'],
                                                ["所以，我会帮主人战胜小彤和小洁她们两个叛徒！",
                                                 "我这里有一些东西，希望能帮到主人。。。"]])
-                    pg.mixer.Sound(GamePath.voice[2]).play()
+                    voice = pg.mixer.Sound(GamePath.voice[2])
 
                 elif npc.id == 3 and not npc.talked:
                     dialogBoxTemp = DialogBox(self.window, GamePath.NPC, 3,
@@ -98,21 +100,23 @@ class SceneManager:
                                                 '主人对我很好，我也很喜欢主人'],
                                                ["我会尽我所能帮助主人，",
                                                 "主人可以在我这里购买一次性道具哦~"]])
-                    pg.mixer.Sound(GamePath.voice[3]).play()
+                    voice = pg.mixer.Sound(GamePath.voice[3])
                 elif npc.id == 4 and not npc.talked:
                     dialogBoxTemp = DialogBox(self.window, GamePath.NPC, 4,
                                               [['主人，我是小白。是你的平板变的！',
                                                 '主人对我很好，我也很喜欢主人'],
                                                ["主人如果想要变得更强的话，",
                                                 "我可以给主人提供附魔装备！"]])
-                    pg.mixer.Sound(GamePath.voice[4]).play()
+                    voice = pg.mixer.Sound(GamePath.voice[4])
+                if voice:
+                    voice.play()
                 if dialogBoxTemp:
                     dialogBoxTemp.render()
                     npc.talked = True
                     print('渲染对话框')
-                    return dialogBoxTemp
-        if r:
-            if not (False in r) and player.talked < 2:
+                    return dialogBoxTemp, voice
+        if if_talked:
+            if not (False in if_talked) and player.talked < 2:
                 player.talking = True
                 player.talked = 2
                 dialogBoxTemp = DialogBox(self.window, GamePath.NPC, -1,
@@ -123,7 +127,8 @@ class SceneManager:
                                            ["我也不知道该怎么办了，",
                                             "不如就往那个传送门里面跑吧！"]])
                 dialogBoxTemp.render()
-                return dialogBoxTemp
+                return dialogBoxTemp, voice
+        return dialogBoxTemp, voice
 
     def continue_talking(self, player, keys, dialogBox, text_count):
         if text_count > len(dialogBox.texts):
@@ -178,7 +183,6 @@ class SceneManager:
             case _:
                 pass
         self.state = state
-
 
     def tick(self, fps):
         self.clock.tick(fps)

@@ -15,7 +15,7 @@ class Portal(pg.sprite.Sprite):
         self.rect.center = (x, y)
         self.CD = 150
 
-    def draw(self, window, dx=0, dy=0):
+    def draw(self, window):
         window.blit(self.image, self.rect)
 
     def update(self, dx, dy):

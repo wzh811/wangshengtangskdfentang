@@ -6,7 +6,7 @@ import pygame as pg
 
 
 class ShoppingBox:
-    def __init__(self, window, npcPath, player, id, items,
+    def __init__(self, window, npcPath, player, index, items,
                  fontSize: int = DialogSettings.fontSize,
                  fontColor=(255, 255, 255),
                  bgColor=(0, 0, 0, 100)):
@@ -22,7 +22,7 @@ class ShoppingBox:
         self.npc = pg.transform.scale(self.npc, (ShopSettings.npcWidth, ShopSettings.npcHeight))
 
         self.player = player
-        self.id = id
+        self.id = index
         self.items = items
         self.sID = 0
 
@@ -50,16 +50,16 @@ class ShoppingBox:
                 self.player.attr_update(addCoins=-10)
                 self.player.bag_update('速度药水', num=1)
         elif self.id == 2:
-            if self.sID == 0 and self.player.money >= 350:
+            if self.sID == 0 and self.player.money >= 350 and self.player.equipment['头盔'][0] == 0:
                 self.player.attr_update(addCoins=-350, addDefence=7)
                 self.player.bag_update('头盔', [1, 0, 0, 0, 0, 0, 0])
-            elif self.sID == 1 and self.player.money >= 500:
+            elif self.sID == 1 and self.player.money >= 500 and self.player.equipment['胸甲'][0] == 0:
                 self.player.attr_update(addCoins=-500, addDefence=10)
                 self.player.bag_update('胸甲', [1, 0, 0, 0, 0, 0, 0])
-            elif self.sID == 2 and self.player.money >= 400:
+            elif self.sID == 2 and self.player.money >= 400 and self.player.equipment['护腿'][0] == 0:
                 self.player.attr_update(addCoins=-400, addDefence=8)
                 self.player.bag_update('护腿', [1, 0, 0, 0, 0, 0, 0])
-            elif self.sID == 3 and self.player.money >= 250:
+            elif self.sID == 3 and self.player.money >= 250 and self.player.equipment['靴子'][0] == 0:
                 self.player.attr_update(addCoins=-250, addDefence=5)
                 self.player.bag_update('靴子', [1, 0, 0, 0, 0, 0, 0])
         elif self.id == 3:
@@ -99,7 +99,8 @@ class ShoppingBox:
                      '防御力:' + str(self.player.defence),
                      '速度:' + str(self.player.speed),
                      '天赋点:' + str(self.player.gift_point),
-                     '↑购买属性增益需要天赋点！']
+                     '↑购买属性增益需要天赋点！',
+                     '（w,s键切换商品，enter确认）']
         elif self.id == 1:
             texts = ['资金:' + str(self.player.money),
                      '力量药水:' + str(self.player.bag.get('力量药水')[0]),
@@ -129,36 +130,36 @@ class ShoppingBox:
             enchantment3 = ''
             if self.sID == 0:
                 equipment_name = '头盔'
-                enchantment1 = Enchantment_sort.name[self.player.equipment['头盔'][1]] + \
-                               Enchantment_sort.lvl[self.player.equipment['头盔'][2]]
-                enchantment2 = Enchantment_sort.name[self.player.equipment['头盔'][3]] + \
-                               Enchantment_sort.lvl[self.player.equipment['头盔'][4]]
-                enchantment3 = Enchantment_sort.name[self.player.equipment['头盔'][5]] + \
-                               Enchantment_sort.lvl[self.player.equipment['头盔'][6]]
+                enchantment1 = EnchantmentSort.name[self.player.equipment['头盔'][1]] + \
+                               EnchantmentSort.lvl[self.player.equipment['头盔'][2]]
+                enchantment2 = EnchantmentSort.name[self.player.equipment['头盔'][3]] + \
+                               EnchantmentSort.lvl[self.player.equipment['头盔'][4]]
+                enchantment3 = EnchantmentSort.name[self.player.equipment['头盔'][5]] + \
+                               EnchantmentSort.lvl[self.player.equipment['头盔'][6]]
             elif self.sID == 1:
                 equipment_name = '胸甲'
-                enchantment1 = Enchantment_sort.name[self.player.equipment['胸甲'][1]] + \
-                               Enchantment_sort.lvl[self.player.equipment['胸甲'][2]]
-                enchantment2 = Enchantment_sort.name[self.player.equipment['胸甲'][3]] + \
-                               Enchantment_sort.lvl[self.player.equipment['胸甲'][4]]
-                enchantment3 = Enchantment_sort.name[self.player.equipment['胸甲'][5]] + \
-                               Enchantment_sort.lvl[self.player.equipment['胸甲'][6]]
+                enchantment1 = EnchantmentSort.name[self.player.equipment['胸甲'][1]] + \
+                               EnchantmentSort.lvl[self.player.equipment['胸甲'][2]]
+                enchantment2 = EnchantmentSort.name[self.player.equipment['胸甲'][3]] + \
+                               EnchantmentSort.lvl[self.player.equipment['胸甲'][4]]
+                enchantment3 = EnchantmentSort.name[self.player.equipment['胸甲'][5]] + \
+                               EnchantmentSort.lvl[self.player.equipment['胸甲'][6]]
             elif self.sID == 2:
                 equipment_name = '护腿'
-                enchantment1 = Enchantment_sort.name[self.player.equipment['护腿'][1]] + \
-                    Enchantment_sort.lvl[self.player.equipment['护腿'][2]]
-                enchantment2 = Enchantment_sort.name[self.player.equipment['护腿'][3]] + \
-                    Enchantment_sort.lvl[self.player.equipment['护腿'][4]]
-                enchantment3 = Enchantment_sort.name[self.player.equipment['护腿'][5]] + \
-                    Enchantment_sort.lvl[self.player.equipment['护腿'][6]]
+                enchantment1 = EnchantmentSort.name[self.player.equipment['护腿'][1]] + \
+                               EnchantmentSort.lvl[self.player.equipment['护腿'][2]]
+                enchantment2 = EnchantmentSort.name[self.player.equipment['护腿'][3]] + \
+                               EnchantmentSort.lvl[self.player.equipment['护腿'][4]]
+                enchantment3 = EnchantmentSort.name[self.player.equipment['护腿'][5]] + \
+                               EnchantmentSort.lvl[self.player.equipment['护腿'][6]]
             elif self.sID == 3:
                 equipment_name = '靴子'
-                enchantment1 = Enchantment_sort.name[self.player.equipment['靴子'][1]] + \
-                    Enchantment_sort.lvl[self.player.equipment['靴子'][2]]
-                enchantment2 = Enchantment_sort.name[self.player.equipment['靴子'][3]] + \
-                    Enchantment_sort.lvl[self.player.equipment['靴子'][4]]
-                enchantment3 = Enchantment_sort.name[self.player.equipment['靴子'][5]] + \
-                    Enchantment_sort.lvl[self.player.equipment['靴子'][6]]
+                enchantment1 = EnchantmentSort.name[self.player.equipment['靴子'][1]] + \
+                               EnchantmentSort.lvl[self.player.equipment['靴子'][2]]
+                enchantment2 = EnchantmentSort.name[self.player.equipment['靴子'][3]] + \
+                               EnchantmentSort.lvl[self.player.equipment['靴子'][4]]
+                enchantment3 = EnchantmentSort.name[self.player.equipment['靴子'][5]] + \
+                               EnchantmentSort.lvl[self.player.equipment['靴子'][6]]
 
             texts = ['为道具附魔。附魔满三词条后,',
                      '再购买可以进行祛魔。',
@@ -167,10 +168,13 @@ class ShoppingBox:
                      enchantment1,
                      enchantment2,
                      enchantment3]
+        else:
+            texts = None
 
         offset = 0
-        for text in texts:
-            text = self.font.render(text, True, self.fontColor)
-            self.window.blit(text, (
-                ShopSettings.textStartX + ShopSettings.boxWidth / 2, ShopSettings.textStartY + offset))
-            offset += DialogSettings.textVerticalDist
+        if texts:
+            for text in texts:
+                text = self.font.render(text, True, self.fontColor)
+                self.window.blit(text, (
+                    ShopSettings.textStartX + ShopSettings.boxWidth / 2, ShopSettings.textStartY + offset))
+                offset += DialogSettings.textVerticalDist

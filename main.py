@@ -10,6 +10,7 @@ from DialogBox import DialogBox
 import os
 from BattleBox import battle
 
+# 读取游戏难度
 if os.path.isfile('dfc.txt'):
     dfc = float(open('dfc.txt', 'r').read())
 else:
@@ -18,14 +19,15 @@ with open('dfc.txt', 'w') as f:
     f.write(str(dfc))
 
 
-def fade_out(window,start_alpha,finish_alpha,interval):
+# 用于生成简单的开场动画
+def fade_out(window, start_alpha, finish_alpha, interval):
     bg_image = pg.image.load(GamePath.game_enter).convert_alpha()
     bg_image = pg.transform.scale(bg_image, (WindowSettings.width, WindowSettings.height))
     alpha = start_alpha
     while alpha > finish_alpha:
         window.fill((0, 0, 0))
         bg_image.set_alpha(alpha)
-        print(bg_image.get_alpha())
+        # print(bg_image.get_alpha())
         window.blit(bg_image, (0, 0))
         alpha -= interval
         for event in pg.event.get():
@@ -40,11 +42,12 @@ def fade_out(window,start_alpha,finish_alpha,interval):
 def run_game(player_name_input):
     global fps, dfc
     pg.init()
+
     # 初始化背景音乐
     pg.mixer.init()
     if os.path.isfile('settings.txt'):
-        with open('settings.txt', 'r') as f:
-            volume = float(f.read())
+        with open('settings.txt', 'r') as v:
+            volume = float(v.read())
     else:
         volume = 0.5
     pg.mixer.music.set_volume(volume)
@@ -54,7 +57,7 @@ def run_game(player_name_input):
 
     # 开场动画
     pg.mixer.Sound(GamePath.sound['game_enter']).play()
-    window.fill((0,0,0))
+    window.fill((0, 0, 0))
     pg.time.wait(300)
     fade_out(window, 255, 0, 0.5)
 
@@ -69,17 +72,20 @@ def run_game(player_name_input):
     player.bag["速度药水"][1] = 0
     player.bag["抗性提升药水"][1] = 0
     player.bag_update('力量药水', 0)
-
+    # 用于打开选项菜单及回到游戏
     paused = False
-
+    # 用于中断配音
+    voice = None
+    # 渲染场景
     sceneManager = SceneManager(window, player)
+    # 用于多段对话
     text_count = -2
 
     # 播放背景音乐
     pg.mixer.music.load(GamePath.bgm[0])
     pg.mixer.music.play(-1)
 
-
+    # 游戏主循环
     while True:
         esc_sgn = False
         sceneManager.tick(fps)
@@ -88,6 +94,10 @@ def run_game(player_name_input):
         # 对话时停止刷新背景
         if not player.talking:
             sceneManager.render()
+            # 退出对话时中断配音
+            if voice:
+                voice.stop()
+                voice = None
         x = 0
         y = 0
         # 循环处理事件
@@ -99,7 +109,7 @@ def run_game(player_name_input):
                     pg.mixer.quit()
                     sys.exit()
 
-                # 场景传送
+                # 传送
                 case GameEvent.EVENT_SWITCH:
                     pg.mixer.Sound(GamePath.sound['flush_scene']).play()
                     if sceneManager.state == GameState.GAME_PLAY_CITY:
@@ -108,14 +118,17 @@ def run_game(player_name_input):
                         sceneManager.flush_scene(GameState.GAME_PLAY_CITY)
                     with open(GamePath.saves + "\\" + player.name + "\\" + "position.txt", 'w') as file:
                         file.write(str(sceneManager.state))
+
                 case pg.MOUSEBUTTONDOWN:
                     # 测试用，打印鼠标坐标
                     if event.button == 1:
                         x, y = event.pos
                         print(x, y)
                 case pg.KEYDOWN:
+                    # 暂停游戏
                     if event.key == pg.K_ESCAPE and not player.talking:
                         esc_sgn = True
+                    # 作弊键
                     if event.key == pg.K_m:
                         player.attr_update(addCoins=5000)
                     if event.key == pg.K_n:
@@ -127,7 +140,7 @@ def run_game(player_name_input):
                                 text_count += 1
                         elif player.talking:
                             text_count += 1
-                        print(text_count)
+                        # print(text_count)
                     # 更新商店
                     if sceneManager.state == GameState.GAME_PLAY_WILD:
                         if sceneManager.scene.shoppingBox is not None:
@@ -142,7 +155,7 @@ def run_game(player_name_input):
                                     elif event.key == pg.K_RETURN:
                                         if sceneManager.scene.shoppingBox.sID == 4:
                                             npc.talking = False
-                                            npc.reset_talk_CD()
+                                            npc.reset_talk_cd()
                                             player.talking = False
                                             sceneManager.scene.shoppingBox = None
                                         else:
@@ -161,6 +174,7 @@ def run_game(player_name_input):
                             print('体力不足')
 
         match sceneManager.state:
+            # 大地图界面
             case GameState.GAME_PLAY_WILD | GameState.GAME_PLAY_CITY:
                 # 显示玩家信息
                 if not player.talking:
@@ -173,7 +187,7 @@ def run_game(player_name_input):
                         window.blit(t, (45 + offset, 700))
                         offset += 200
                 if player.information:
-                    window.blit(player.information[0], (0,0))
+                    window.blit(player.information[0], (0, 0))
                     player.information[1] -= 1
                     if player.information[1] <= 0:
                         player.information = None
@@ -258,7 +272,9 @@ def run_game(player_name_input):
                             sprites.draw(window)
                             player.draw(window)
                     # 进入对话
-                    dialogBox = sceneManager.check_event_talking(player, keys)
+                    dialogBox, voice1 = sceneManager.check_event_talking(player, keys)
+                    if voice1:
+                        voice = voice1
                     if dialogBox is not None:
                         text_count = 1
 
@@ -273,7 +289,7 @@ def run_game(player_name_input):
                             if npc.talking:
                                 npc.talking = False
                                 player.talking = False
-                                npc.reset_talk_CD()
+                                npc.reset_talk_cd()
                                 print("退出对话")
                                 dialogBox = None
                                 text_count = 0
@@ -350,7 +366,9 @@ def run_game(player_name_input):
                             sprites.draw(window)
                             player.draw(window)
                     # 进入对话
-                    dialogBox = sceneManager.check_event_talking(player, keys)
+                    dialogBox, voice1 = sceneManager.check_event_talking(player, keys)
+                    if voice1:
+                        voice = voice1
                     if dialogBox is not None:
                         text_count = 1
 
@@ -370,7 +388,7 @@ def run_game(player_name_input):
                                     npc.talked = True
                                     player.talking = False
                                     if npc.id == 0 or npc.id == 1:
-                                        npc.reset_talk_CD()
+                                        npc.reset_talk_cd()
                                     print("退出对话")
                                     dialogBox = None
                                     text_count = 0
@@ -458,7 +476,7 @@ def run_game(player_name_input):
                                 sceneManager.flush_scene(GameState.GAME_PLAY_CITY)
                     else:
                         sceneManager.flush_scene(GameState.GAME_PLAY_CITY)
-                    (sceneManager.scene.cameraX, sceneManager.scene.cameraY) = (c_x,c_y)
+                    (sceneManager.scene.cameraX, sceneManager.scene.cameraY) = (c_x, c_y)
                     esc_sgn = False
                     paused = False
 
@@ -473,6 +491,7 @@ if __name__ == "__main__":
     fps = 30
     # 登录
     import Account
+
     player_name = Account.account_manager()
     # player_name = 'player1'
     if player_name:

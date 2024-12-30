@@ -3,7 +3,7 @@
 import pygame as pg
 from Settings import *
 from random import randint
-from Bullet import Bullet,Circle
+from Bullet import Bullet, Circle
 
 
 class Monster(pg.sprite.Sprite):
@@ -80,16 +80,16 @@ class Monster(pg.sprite.Sprite):
             # 近战攻击
             if self.atk_timer <= 0:
                 if pg.sprite.collide_rect(self, player):
-                    self.atk_timer = 40/self.dfc
+                    self.atk_timer = 40 / self.dfc
                     if player.damage:
-                        player.HP -= self.attack * 80 / (80+player.defence) * (1-player.enchantment[1])
+                        player.HP -= self.attack * 80 / (80 + player.defence) * (1 - player.enchantment[1])
                         pg.mixer.Sound(GamePath.sound['player_be_hit']).play()
             # 发射子弹
             if self.shoot_timer <= 0:
                 bullet = Bullet(self.rect.x, self.rect.y, num=2,
                                 m_x=player.rect.center[0], m_y=player.rect.center[1],
                                 atk=self.attack // 2)
-                self.shoot_timer = 30/self.dfc
+                self.shoot_timer = 30 / self.dfc
                 return bullet
 
     def update(self, dx, dy):
@@ -177,14 +177,14 @@ class XiaoJie(Monster):
         self.absorb_timer = 120
         self.absorb_times = 0
 
-    def battle_update(self,player, battle=True):
+    def battle_update(self, player, battle=True):
         self.shoot_timer1 -= 1
         self.absorb_timer -= 1
         self.knife_timer -= 1
         if self.bullet_list1 is None and self.shoot_timer1 <= 0:
             self.shoot_timer1 = 180
             pg.mixer.Sound(GamePath.sound['boss_shoot2']).play()
-            x = [randint(0,WindowSettings.width) for i in range(3)]
+            x = [randint(0, WindowSettings.width) for i in range(3)]
             y = [randint(0, WindowSettings.height) for i in range(3)]
             self.bullet_list1 = [Bullet(x[i], y[i], num=4,
                                         m_x=player.rect.center[0], m_y=player.rect.center[1],
