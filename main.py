@@ -73,13 +73,17 @@ def run_game(player_name_input):
         sceneManager.tick(fps)
         keys = pg.key.get_pressed()
         m_x, m_y = pg.mouse.get_pos()
-        # 对话时停止刷新背景
+        # 对话时停止刷新背景，停止脚步声
         if not player.talking:
             sceneManager.render()
             # 退出对话时中断配音
             if voice:
                 voice.stop()
                 voice = None
+        else:
+            if player.step:
+                player.step.stop()
+                player.step = None
         x = 0
         y = 0
         # 循环处理事件
