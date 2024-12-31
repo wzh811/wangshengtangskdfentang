@@ -63,11 +63,11 @@ def account_manager():
     if os.path.isfile('auto_sgn.txt'):
         while not sgn_suc:
             with open('auto_sgn.txt', 'r+') as a:
-                players = a.readlines()
+                players = [i.strip() for i in a.readlines()]
                 if not players:
                     break
                 print(players)
-                auto_sgn = players[-1][:-1]
+                auto_sgn = players[-1]
                 st = ui.confirm(text="欢迎"+auto_sgn+'！', title=title,
                                 buttons=['启动游戏', '切换账号', '修改密码', '注销', '取消自动登录'])
                 match st:
@@ -75,13 +75,14 @@ def account_manager():
                         sgn_suc = auto_sgn
                         return auto_sgn
                     case '切换账号':
-                        print(players[:][:-1])
+                        print(players[:])
                         auto_sgns = ui.confirm(text='请选择您要登录的账号：', title=title,
-                                               buttons=players[:][:-1]+['我要\n登录其他账号'])
+                                               buttons=players[:]+['我要\n登录其他账号'])
                         if auto_sgns == '我要\n登录其他账号':
                             break
                         elif auto_sgns:
                             sgn_suc = auto_sgns
+                            print(auto_sgns)
                             return auto_sgns
                     case '修改密码':
                         sgnin = auto_sgn
