@@ -20,7 +20,7 @@ class Bullet(pg.sprite.Sprite):
         self.rect.center = (x, y)
         speed = BulletSettings.bulletSpeed[num]
         # 子弹飞行（0,2,4分别为玩家子弹，怪物子弹，boss子弹）
-        if num // 2 == 0:
+        if num % 2 == 0:
             if m_x == x:
                 if m_y > y:
                     self.direction_x = 0
