@@ -36,11 +36,11 @@ def sgn_in():
                             psws = p.readlines()
                             line = psws[j]
                             z_psw = ''
-                            for j in range(len(psw)):
-                                if j // 2 == 0:
-                                    z_psw = z_psw + psw[j]
+                            for z in range(len(psw)):
+                                if z // 2 == 0:
+                                    z_psw = z_psw + psw[z]
                                 else:
-                                    z_psw = psw[j] + z_psw
+                                    z_psw = psw[z] + z_psw
                             if line[:-1] == sgnin[0] + z_psw + sgnin[1:]:
                                 ui.alert(text="登录成功！", title=title)
                                 sgn_suc = True
@@ -68,14 +68,16 @@ def account_manager():
                     break
                 print(players)
                 auto_sgn = players[-1][:-1]
-                st = ui.confirm(text="欢迎"+auto_sgn+'！', title=title, buttons=['启动游戏', '切换账号', '修改密码', '注销', '取消自动登录'])
+                st = ui.confirm(text="欢迎"+auto_sgn+'！', title=title,
+                                buttons=['启动游戏', '切换账号', '修改密码', '注销', '取消自动登录'])
                 match st:
                     case '启动游戏':
                         sgn_suc = auto_sgn
                         return auto_sgn
                     case '切换账号':
                         print(players[:][:-1])
-                        auto_sgns = ui.confirm(text='请选择您要登录的账号：', title=title, buttons=players[:][:-1]+['我要\n登录其他账号'])
+                        auto_sgns = ui.confirm(text='请选择您要登录的账号：', title=title,
+                                               buttons=players[:][:-1]+['我要\n登录其他账号'])
                         if auto_sgns == '我要\n登录其他账号':
                             break
                         elif auto_sgns:
@@ -103,8 +105,7 @@ def account_manager():
                                             ui.alert(text="登录成功！", title=title)
                                             p = open("passwords.txt", 'r+')
                                             psws = p.readlines()
-                                            n_psw = ui.prompt(text="欢迎" + sgnin + "!\n请输入您的新密码：", title=title,
-                                                              default=psws[j][-1])
+                                            n_psw = ui.prompt(text="欢迎" + sgnin + "!\n请输入您的新密码：", title=title)
                                             if n_psw:
                                                 zip_psw = ''
                                                 for z in range(len(n_psw)):
@@ -253,15 +254,14 @@ def account_manager():
                             if i[:-1] == player_name:
                                 p = open("passwords.txt", 'r+')
                                 psws = p.readlines()
-                                n_psw = ui.prompt(text="欢迎" + player_name + "!\n请输入您的新密码：", title=title,
-                                                  default=psws[j][-1])
+                                n_psw = ui.prompt(text="欢迎" + player_name + "!\n请输入您的新密码：", title=title)
                                 if n_psw:
                                     zip_psw = ''
-                                    for i in range(len(n_psw)):
-                                        if i // 2 == 0:
-                                            zip_psw = zip_psw + n_psw[i]
+                                    for z in range(len(n_psw)):
+                                        if z // 2 == 0:
+                                            zip_psw = zip_psw + n_psw[z]
                                         else:
-                                            zip_psw = n_psw[i] + zip_psw
+                                            zip_psw = n_psw[z] + zip_psw
                                     zip_psw = player_name[0] + zip_psw + player_name[1:]
                                     psws[j] = zip_psw + '\n'
                                     p.seek(0)

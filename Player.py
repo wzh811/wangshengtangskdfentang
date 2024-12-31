@@ -16,8 +16,8 @@ class Player(pg.sprite.Sprite):
         self.images = [pg.transform.scale(pg.image.load(img), (PlayerSettings.playerWidth, PlayerSettings.playerHeight))
                        for img in GamePath.player]
         self.image = self.images[self.index]
-        # 用于处理等级不足无法开箱子的消息显示，或许之后会有其他用途
-        self.information = []
+        # 用于处理等级不足无法开箱子的消息显示
+        self.information = None
         # 玩家位置
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
@@ -93,8 +93,10 @@ class Player(pg.sprite.Sprite):
                 f'天赋：{self.gift_point}',
                 f'体力：{int(self.stamina)}%'
                 ]
-        self.text = [pg.font.Font(GamePath.font, 18).render(t, True, (255, 255, 0, 120)) for t in text]
-        self.bag_text = [pg.font.Font(GamePath.font, 18).render(f'{item}：{num}', True, (255, 255, 0, 120)) for
+        self.text = [pg.font.Font(GamePath.font, 18).render(t, True,
+                                                            (255, 255, 0, 120)) for t in text]
+        self.bag_text = [pg.font.Font(GamePath.font, 18).render(f'{item}：{num}', True,
+                                                                (255, 255, 0, 120)) for
                          item, num in self.bag.items()]
 
     # 整合装备提供的附魔属性，便于伤害计算

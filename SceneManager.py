@@ -139,7 +139,7 @@ class SceneManager:
             return text_count
 
     def check_event_boss(self, player, keys):
-        if player.talked == 2:
+        if player.talked >= 2:
             for npc in self.scene.npcs.sprites():
                 if pg.sprite.collide_rect(player, npc) and npc.can_talk():
                     if npc.id == 0:
@@ -159,7 +159,7 @@ class SceneManager:
                 pg.mixer.music.play(-1)
             case GameState.GAME_PLAY_CITY:
                 self.scene = Scene.CityScene(self.window, self.player)
-                if self.player.talked == 2:
+                if self.player.talked >= 2:
                     pg.mixer.music.load(GamePath.bgm[3])
                     pg.mixer.music.play(-1)
                 else:

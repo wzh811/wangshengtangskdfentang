@@ -1,14 +1,11 @@
 # -*- coding:utf-8 -*-
 
-import pygame as pg
-import sys
-
 from SceneManager import SceneManager
-from Settings import *
 from Player import Player
 from DialogBox import DialogBox
 import os
 from BattleBox import battle
+from Animation import *
 
 # 读取游戏难度
 if os.path.isfile('dfc.txt'):
@@ -17,24 +14,6 @@ else:
     dfc = 1.0
 with open('dfc.txt', 'w') as f:
     f.write(str(dfc))
-
-
-# 用于生成简单的开场动画
-def fade_out(window, image, start_alpha, finish_alpha, interval):
-    image = pg.transform.scale(image, (WindowSettings.width, WindowSettings.height))
-    alpha = start_alpha
-    while alpha > finish_alpha:
-        window.fill((0, 0, 0))
-        image.set_alpha(alpha)
-        # print(image.get_alpha())
-        window.blit(image, (0, 0))
-        alpha -= interval
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                pg.quit()
-                sys.exit()
-        pg.display.update()
-    pg.time.wait(300)
 
 
 # 游戏主进程
@@ -79,7 +58,7 @@ def run_game(player_name_input):
     paused = False
     # 用于中断配音
     voice = None
-    # 渲染场景
+    # 用于渲染场景
     sceneManager = SceneManager(window, player)
     # 用于多段对话
     text_count = -2
@@ -115,6 +94,12 @@ def run_game(player_name_input):
                 # 传送
                 case GameEvent.EVENT_SWITCH:
                     pg.mixer.Sound(GamePath.sound['flush_scene']).play()
+                    # 过场动画
+                    if player.talked == 2:
+                        cutscene(window, player.name)
+                        player.talked = 3
+                        player.update(sceneManager.scene, keys)
+
                     if sceneManager.state == GameState.GAME_PLAY_CITY:
                         sceneManager.flush_scene(GameState.GAME_PLAY_WILD)
                     else:
@@ -193,7 +178,7 @@ def run_game(player_name_input):
                     window.blit(player.information[0], (0, 0))
                     player.information[1] -= 1
                     if player.information[1] <= 0:
-                        player.information = None
+                        player.information = []
                 # 调整游戏选项（暂停游戏）
                 if esc_sgn:
                     (c_x, c_y) = (sceneManager.scene.cameraX, sceneManager.scene.cameraY)
@@ -207,13 +192,17 @@ def run_game(player_name_input):
                         player.talking = True
                         text_count = 1
                         dialogBox = DialogBox(window, GamePath.NPC, -1,
-                                              [[f'我叫{player.name}。', '是一名普通的大学生。'],
+                                              [[f'如你所见，我叫{player.name}，',
+                                                '是一名普通的大学生。'],
                                                ["今天，当我从睡梦中醒来准备赶早八的时候，",
-                                                "忽然发现自己转生到了异世界！而且一看就是在二次元！(这小机器人是我吗？！)"],
-                                               ["（毕竟自己都已经变成纸片人了嘛）",
-                                                '不远处好像有两个漂亮妹子，一看就很好说话（？）', '去找她们问问情况吧。']])
+                                                "忽然发现自己转生到了异世界！(这小机器人是我吗？！)"],
+                                               ['而且一看就是在二次元！',
+                                                "（毕竟自己都已经变成纸片人了嘛）"],
+                                               ['不远处好像有两个漂亮妹子，一看就很好说话（？）',
+                                                '去找她们问问情况吧。']])
                         dialogBox.render()
                         player.talked = 1
+                        player.update(keys, sceneManager.scene)
                         continue
                     player.update(keys, sceneManager.scene)
                     player.draw(window)
@@ -233,6 +222,8 @@ def run_game(player_name_input):
                             sceneManager.flush_scene(GameState.GAME_OVER)
                             sceneManager.render()
                         else:
+                            # 怪物被击败
+                            # boss小彤
                             if boss.lvl == 11:
                                 with open(GamePath.saves + "\\" + player_name + "\\" + "NPCs.txt", 'r+') as n:
                                     lines = n.readlines()
@@ -241,21 +232,16 @@ def run_game(player_name_input):
                                     n.writelines(lines)
                                     n.truncate()
                                     if lines[1] == '1,2\n':
-                                        sceneManager.flush_scene(GameState.GAME_WIN)
-                                        sceneManager.render()
-                                        offset = 0
-                                        texts = ['你成功战胜了你的马桶和洗衣机。',
-                                                 '虽然这看起来并不是什么值得骄傲的事。',
-                                                 f'但{player.name},你赢了。',
-                                                 'END']
-                                        for t in texts:
-                                            t = pg.font.Font(GamePath.font, 50).render(t,True, (255, 0, 255))
-                                            window.blit(t, (50, offset))
-                                            offset += 100
-                                        pg.display.flip()
-                                        pg.time.wait(8000)
-                                        bg_image = pg.image.load(GamePath.win).convert_alpha()
-                                        fade_out(window, bg_image, 255, 0, 1)
+                                        # 游戏胜利
+                                        if dfc < 1.5:
+                                            sceneManager.flush_scene(GameState.GAME_WIN)
+                                            sceneManager.render()
+                                            common_win(window, player.name)
+                                        else:
+                                            sceneManager.flush_scene(GameState.GAME_WIN)
+                                            sceneManager.render()
+                                            elite_win(window, player.name)
+                            # boss小洁
                             elif boss.lvl == 12:
                                 with open(GamePath.saves + "\\" + player_name + "\\" + "NPCs.txt", 'r+') as n:
                                     lines = n.readlines()
@@ -264,22 +250,15 @@ def run_game(player_name_input):
                                     n.writelines(lines)
                                     n.truncate()
                                     if lines[0] == '0,2\n':
-                                        sceneManager.flush_scene(GameState.GAME_WIN)
-                                        sceneManager.render()
-                                        offset = 0
-                                        texts = ['你成功战胜了你的马桶和洗衣机。',
-                                                 '虽然这看起来并不是什么值得骄傲的事。',
-                                                 f'但{player.name},你赢了。',
-                                                 'END']
-                                        for t in texts:
-                                            t = pg.font.Font(GamePath.font, 50).render(t, True, (255, 0, 255))
-                                            window.blit(t, (50, offset))
-                                            offset += 100
-                                        pg.display.flip()
-                                        pg.time.wait(8000)
-                                        bg_image = pg.image.load(GamePath.win).convert_alpha()
-                                        fade_out(window, bg_image, 255, 0, 1)
-                            # 怪物被击败
+                                        # 游戏胜利
+                                        if dfc < 1.5:
+                                            sceneManager.flush_scene(GameState.GAME_WIN)
+                                            sceneManager.render()
+                                            common_win(window, player.name)
+                                        else:
+                                            sceneManager.flush_scene(GameState.GAME_WIN)
+                                            sceneManager.render()
+                                            elite_win(window, player.name)
                             player.kill()
                             sprites.empty()
                             del sceneManager

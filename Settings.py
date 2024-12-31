@@ -121,6 +121,7 @@ class GamePath:
 
     pause_menu = r'.\assets\menu\pause.png'
     win = r'.\assets\menu\win.png'
+    hutao = r'.\assets\menu\hutao.png'
     over = r'.\assets\menu\over.png'
 
     font = r'.\assets\fonts\STXINGKA.TTF'
