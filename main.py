@@ -352,8 +352,8 @@ def run_game(player_name_input):
                         b = battle(player, m, window, sceneManager, fps, dfc)
                         # 玩家被击败
                         if b == 1:
-                            player.update(keys, sceneManager.scene)
                             player.kill()
+                            player.update(keys, sceneManager.scene)
                             sceneManager.flush_scene(GameState.GAME_OVER)
                             sceneManager.render()
                         else:
