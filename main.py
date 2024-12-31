@@ -98,7 +98,7 @@ def run_game(player_name_input):
                     if player.talked == 2:
                         cutscene(window, player.name)
                         player.talked = 3
-                        player.update(sceneManager.scene, keys)
+                        player.update(keys, sceneManager.scene)
 
                     if sceneManager.state == GameState.GAME_PLAY_CITY:
                         sceneManager.flush_scene(GameState.GAME_PLAY_WILD)
