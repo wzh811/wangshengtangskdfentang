@@ -2,9 +2,11 @@
 
 队员：王梓衡2024533079[项目主页](https://github.com/wzh811/game/)
 
-Requirements(第三方库):pyautogui
+Requirements(第三方库):pyautogui,googletrans
 
 pip install pyautogui
+
+pip install googletrans
 
 # 一个借鉴了元气骑士和MC和原神的小游戏，剧情非常简单（因为懒得写了（bushi)）
 
