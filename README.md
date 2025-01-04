@@ -2,11 +2,11 @@
 
 队员：王梓衡2024533079[项目主页](https://github.com/wzh811/game/)
 
-Requirements(第三方库):pyautogui,googletrans
+**Requirements(第三方库):openai(相信助教一定装好了),pyautogui,deep_translator**
 
 pip install pyautogui
 
-pip install googletrans
+pip install deep_translator
 
 # 一个借鉴了元气骑士和MC和原神的小游戏，剧情非常简单（因为懒得写了（bushi)）
 
