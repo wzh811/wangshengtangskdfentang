@@ -1,6 +1,6 @@
 队名：往生堂上科大分堂
 
-队员：王梓衡2024533079[项目主页](https://github.com/wzh811/game/)
+队员：王梓衡2024533079[项目主页](https://github.com/wzh811/wangshengtangskdfentang/)
 
 **Requirements(第三方库):openai(相信助教一定装好了),pyautogui,deep_translator**
 
