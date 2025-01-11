@@ -16,7 +16,7 @@ pip install deep_translator
 
 关于操作：
 
-空格键继续对话，f键交互，w、s键切换商品，enter购买，按住e键显示具体信息，对boss小彤按e键进行大语言模型对话，左ctrl或左shift疾跑
+空格键继续对话，f键交互，w、s键切换商品，enter购买，按住e键显示具体信息，对boss小彤按e键进行大语言模型对话，左ctrl或左shift疾跑，esc打开选项菜单
 
 关于作弊（快速通关）：
 
