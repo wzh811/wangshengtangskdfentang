@@ -41,7 +41,7 @@ def battle(player, monster, window, scene_manager, fps, dfc=1.0):
     if dfc > 1.8:
         monster.attack *= 1.25
         monster.HP *= 1.25
-        monster.speed *= 1.1
+        monster.speed *= 1.2
     monster.maxHP = monster.HP
 
     # 生成怪物
