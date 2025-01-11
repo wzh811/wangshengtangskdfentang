@@ -1,40 +1,25 @@
 # -*- coding:utf-8 -*-
 
-import pygame as pg
 from Settings import *
-from random import randint
 
 
 class NPC(pg.sprite.Sprite):
     def __init__(self, num, player_name):
         super().__init__()
-        k = WindowSettings.outdoorScale
-        # self.x = randint(100, WindowSettings.width*k-100)
-        # self.y = randint(100, WindowSettings.height*k-100)
         # 固定位置生成NPC
-        if num == 0:
-            self.x = 100
-            self.y = 100
-        elif num == 1:
-            self.x = 300
-            self.y = 100
-        elif num == 2:
-            self.x = 500
-            self.y = 100
-        elif num == 3:
-            self.x = 1000
-            self.y = 100
-        elif num == 4:
-            self.x = 300
-            self.y = 400
+        self.x = NPCSettings.NPCx[num]
+        self.y = NPCSettings.NPCy[num]
         self.image = pg.image.load(GamePath.NPC[num])
         self.image = pg.transform.scale(self.image, (NPCSettings.NPCWidth, NPCSettings.NPCHeight))
         self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y)
+
         self.talking = False
         self.id = num
         self.talk_CD = 0
         self.talked = False
+
+        # 储存NPC信息（其实发现没用，用作胜利结算了，应该命名为boss.txt但懒得改了）
         n = open(GamePath.saves + "\\" + player_name + "\\" + "NPCs.txt", 'a+')
         talking = 1 if self.talking else 0
         talked = 1 if self.talking else 0
@@ -60,5 +45,6 @@ class NPC(pg.sprite.Sprite):
         else:
             return not self.talking
 
+    # 改为f键互动之后也没用了，但还是留在这里，万一要改回去
     def reset_talk_cd(self):
         self.talk_CD = 150

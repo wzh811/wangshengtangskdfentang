@@ -1,34 +1,6 @@
 # -*- coding:utf-8 -*-
 
-import pygame as pg
-from random import randint
-from Settings import *
-from Monster import Monster
-import os
-
-
-# 障碍物类改造为箱子
-class Chest(pg.sprite.Sprite):
-    def __init__(self, index):
-        super().__init__()
-        k = WindowSettings.outdoorScale
-        self.x = randint(100, WindowSettings.width * k - 100)
-        self.y = randint(100, WindowSettings.height * k - 100)
-        self.image = pg.image.load(GamePath.chest)
-        self.image = pg.transform.scale(self.image, (100, 100))
-        self.rect = self.image.get_rect()
-        self.rect.center = (self.x, self.y)
-        self.index = index
-        self.lvl = (index + 1) // 2
-
-    def update_pos(self, x, y):
-        self.x = x
-        self.y = y
-        self.rect.center = (x, y)
-
-    def update(self, dx, dy):
-        self.rect.x = self.x - dx
-        self.rect.y = self.y - dy
+from Objects import *
 
 
 def gen_wild_map(player):
@@ -38,11 +10,35 @@ def gen_wild_map(player):
     map_Obj = []
     for i in range(SceneSettings.tileXnum):
         tmp = []
-        for j in range(SceneSettings.tileYnum):
-            k = randint(0, len(images) - 1)
-            tmp.append(images[k])
-            m.write(str(k))
-        m.write("\n")
+        if i == 0 or i == SceneSettings.tileXnum - 1:
+            for j in range(SceneSettings.tileYnum):
+                tmp.append(images[0])
+                m.write('0')
+        elif i == 1 or i == 2 or i == 3:
+            for j in range(SceneSettings.tileYnum):
+                if 9 < j < 38:
+                    tmp.append(images[6])
+                    m.write('6')
+                elif j == 0 or j == SceneSettings.tileYnum - 1:
+                    tmp.append(images[0])
+                    m.write('0')
+                else:
+                    k = randint(1, len(images) - 2)
+                    tmp.append(images[k])
+                    m.write(str(k))
+        else:
+            for j in range(SceneSettings.tileYnum):
+                if j == 0 or j == SceneSettings.tileYnum - 1:
+                    tmp.append(images[0])
+                    m.write('0')
+                elif 33 < j < 38:
+                    tmp.append(images[6])
+                    m.write('6')
+                else:
+                    k = randint(1, len(images) - 2)
+                    tmp.append(images[k])
+                    m.write(str(k))
+        m.write('\n')
         map_Obj.append(tmp)
     m.close()
 
@@ -70,17 +66,41 @@ def load_wild_map(player_name):
 def gen_city_map(player):
     images = [pg.image.load(tile) for tile in GamePath.cityTiles]
     images = [pg.transform.scale(image, (SceneSettings.tileWidth, SceneSettings.tileHeight)) for image in images]
-
     map_Obj = []
+
     m = open(GamePath.saves + "\\" + player.name + "\\" + "city_map.txt", 'w')
     for i in range(SceneSettings.tileXnum):
         tmp = []
-        for j in range(SceneSettings.tileYnum):
-            k = randint(0, len(images) - 1)
-            tmp.append(images[k])
-            m.write(str(k))
+        if i == 0 or i == SceneSettings.tileXnum - 1:
+            for j in range(SceneSettings.tileYnum):
+                tmp.append(images[0])
+                m.write('0')
+        elif i == 1 or i == 2 or i == 3:
+            for j in range(SceneSettings.tileYnum):
+                if 9 < j < 38:
+                    tmp.append(images[6])
+                    m.write('6')
+                elif j == 0 or j == SceneSettings.tileYnum - 1:
+                    tmp.append(images[0])
+                    m.write('0')
+                else:
+                    k = randint(1, len(images) - 2)
+                    tmp.append(images[k])
+                    m.write(str(k))
+        else:
+            for j in range(SceneSettings.tileYnum):
+                if j == 0 or j == SceneSettings.tileYnum - 1:
+                    tmp.append(images[0])
+                    m.write('0')
+                elif 33 < j < 38:
+                    tmp.append(images[6])
+                    m.write('6')
+                else:
+                    k = randint(1, len(images) - 2)
+                    tmp.append(images[k])
+                    m.write(str(k))
+        m.write('\n')
         map_Obj.append(tmp)
-        m.write("\n")
     m.close()
 
     return map_Obj
@@ -102,35 +122,6 @@ def load_city_map(player_name):
     m.close()
 
     return map_Obj
-
-
-def gen_chests(player_name):
-    chests = []
-    if os.path.isfile(GamePath.saves + "\\" + player_name + "\\" + "chests.txt"):
-        n = open(GamePath.saves + "\\" + player_name + "\\" + "chests.txt", 'r')
-        lines = n.readlines()
-        for line in lines:
-            infor = line[:-1].split(',')
-            index = infor[2]
-            x = infor[0]
-            y = infor[1]
-            chest = Chest(int(index))
-            chest.update_pos(int(x), int(y))
-            chests.append(chest)
-        n.close()
-    else:
-        n = open(GamePath.saves + "\\" + player_name + "\\" + "chests.txt", 'w')
-        for i in range(1, 21):
-            lvl = (i + 1) // 2
-            chest = Chest(i)
-            chest.lvl = lvl
-            x = randint(540 + chest.lvl * 300, 800 + chest.lvl * 300)
-            y = randint(600, WindowSettings.height * WindowSettings.outdoorScale - 500)
-            chest.update_pos(x, y)
-            n.write(f"{chest.x},{chest.y},{chest.index}\n")
-            chests.append(chest)
-        n.close()
-    return chests
 
 
 def load_monsters(player_name):

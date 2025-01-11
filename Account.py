@@ -126,14 +126,14 @@ def account_manager():
                                             break
                     case '注销':
                         sgnin = auto_sgn
-                        with open('players.txt', 'r') as f:
+                        with open('players.txt', 'r+') as f:
                             lines = f.readlines()
                             for j, i in enumerate(lines):
                                 if i[:-1] == sgnin:
                                     psw = ui.password(text="请输入您的密码以验证身份：", title=title)
                                     if not psw:
                                         break
-                                    with open('passwords.txt', 'r') as p:
+                                    with open('passwords.txt', 'r+') as p:
                                         psws = p.readlines()
                                         line = psws[j]
                                         z_psw = ''
@@ -157,7 +157,10 @@ def account_manager():
                                                 os.chmod(os.getcwd() + "\\" + sgnin, 0o777)
                                                 rmtree(os.getcwd() + "\\" + sgnin)
                                                 ui.alert(text="注销成功！", title=title)
-                                            p.close()
+                                                a.seek(0)
+                                                a.writelines([player+'\n' for player in players[:-1]])
+                                                a.truncate()
+                                                break
                                         else:
                                             ui.alert(text=" 注销：\n密码不正确！", title=title)
                                             break

@@ -4,6 +4,8 @@ import pygame as pg
 from Settings import *
 from random import randint
 from Bullet import Bullet, Circle
+from Chat import *
+import queue
 
 
 class Monster(pg.sprite.Sprite):
@@ -38,13 +40,21 @@ class Monster(pg.sprite.Sprite):
                         self.y = int(line[1])
                         break
                 else:
-                    self.x = randint(540 + self.lvl * 300, 800 + self.lvl * 300)
-                    self.y = randint(600, WindowSettings.height * k - 500)
+                    self.x = (self.lvl - 1) // 2 * 720 + 460
+                    if self.lvl % 2 == 1:
+                        self.y = randint(960, 1140)
+                    else:
+                        self.y = randint(1640, 2000)
                     n.write(f"{self.x},{self.y},{self.lvl}\n")
+                    modify_wild_map(player_name=player_name, monster_pos=(self.lvl, self.y))
             else:
-                self.x = randint(540 + self.lvl * 300, 800 + self.lvl * 300)
-                self.y = randint(600, WindowSettings.height * k - 500)
+                self.x = (self.lvl - 1) // 2 * 720 + 460
+                if self.lvl % 2 == 1:
+                    self.y = randint(960, 1140)
+                else:
+                    self.y = randint(1640, 2000)
                 n.write(f"{self.x},{self.y},{self.lvl}\n")
+                modify_wild_map(player_name=player_name, monster_pos=(self.lvl, self.y))
             n.close()
         else:
             self.speed = MonsterSettings.monsterSpeed[self.lvl]
@@ -88,7 +98,7 @@ class Monster(pg.sprite.Sprite):
             if self.shoot_timer <= 0:
                 bullet = Bullet(self.rect.x, self.rect.y, num=2,
                                 m_x=player.rect.center[0], m_y=player.rect.center[1],
-                                atk=self.attack // 2)
+                                atk=self.attack / 2)
                 self.shoot_timer = 30 / self.dfc
                 return bullet
 
@@ -97,9 +107,33 @@ class Monster(pg.sprite.Sprite):
         self.rect.y = self.y - dy
 
 
+def modify_wild_map(player_name, monster_pos):
+    tileX = (monster_pos[0] - 1) // 2 * 18 + 12
+    tileY = monster_pos[1] // 40
+    if tileY < 35:
+        mod_tiles = [(tileX, Y) for Y in range(tileY + 1, 34)]
+        mod_tiles.extend([(tileX + 1, Y) for Y in range(tileY + 1, 34)])
+    else:
+        mod_tiles = [(tileX, Y) for Y in range(37, tileY + 3)]
+        mod_tiles.extend([(tileX + 1, Y) for Y in range(37, tileY + 3)])
+    # print(mod_tiles)
+    m = open(GamePath.saves + "\\" + player_name + "\\" + "wild_map.txt", 'r+')
+    lines = m.readlines()
+    tiles = [list(line.strip()) for line in lines]
+
+    for i in range(SceneSettings.tileXnum):
+        for j in range(SceneSettings.tileYnum):
+            if (i, j) in mod_tiles:
+                tiles[i][j] = '6'
+    m.seek(0)
+    m.writelines([''.join(line) + '\n' for line in tiles])
+    m.truncate()
+    m.close()
+
+
 '''
-小彤：弹幕雨，圆圈式弹幕
-小洁：吸附玩家，涡轮绞杀
+小彤：弹幕雨，圆圈式弹幕(可以使用e键与她聊天，基于大预言模型和MyMemory翻译) 
+小洁：吸附玩家，涡轮绞杀(目前采用大预言模型进行出招)
 (很难打！等装备好了再打！)
 '''
 
@@ -157,7 +191,10 @@ class XiaoTong(Monster):
                                 [Bullet(self.rect.center[0], self.rect.center[1], num=4,
                                         m_x=WindowSettings.width, m_y=y[i],
                                         atk=self.attack // 2) for i in range(9)]
-        super().battle_update(player)
+        return super().battle_update(player)
+
+
+dec_queue = queue.Queue()
 
 
 class XiaoJie(Monster):
@@ -176,7 +213,9 @@ class XiaoJie(Monster):
         self.shoot_timer1 = 90
         self.absorb_timer = 120
         self.absorb_times = 0
+        self.maxHP = 0
 
+    # 无大语言模型版
     def battle_update(self, player, battle=True):
         self.shoot_timer1 -= 1
         self.absorb_timer -= 1
@@ -218,4 +257,49 @@ class XiaoJie(Monster):
             else:
                 self.absorb_timer = 210
                 self.absorb_times = 0
-        super().battle_update(player)
+        return super().battle_update(player)
+
+    # 大语言模型版
+    def ai_update(self, player):
+        global dec
+        self.knife_timer -= 1
+        if self.knife_timer == 20:
+            # 多线程获取出招
+            deci = DecThread((self.HP / self.maxHP * 100, player.HP / player.maxHP * 100,
+                              player.rect.center, self.rect.center), q=dec_queue)
+            deci.start()
+        if self.knife_timer <= 0:
+            dec = dec_queue.get()
+            self.knife_timer = 60
+            if self.bullet_list1 is None and dec == 1:
+                pg.mixer.Sound(GamePath.sound['boss_shoot2']).play()
+                x = [randint(0, WindowSettings.width) for i in range(5)]
+                y = [randint(0, WindowSettings.height) for i in range(5)]
+                self.bullet_list1 = [Bullet(x[i], y[i], num=4,
+                                            m_x=player.rect.center[0], m_y=player.rect.center[1],
+                                            atk=self.attack // 2) for i in range(5)]
+            elif dec == 2:
+                pg.mixer.Sound(GamePath.sound['boss_shoot1']).play()
+                self.bullet_list2 = [Circle(self.rect.centerx, self.rect.centery, num=5, atk=self.attack // 4)]
+
+            elif dec == 3:
+                pg.mixer.Sound(GamePath.sound['boss_shoot1']).play()
+                m_x = player.rect.center[0]
+                m_y = player.rect.center[1]
+                speed = self.speed * 2
+                x = self.rect.centerx
+                y = self.rect.centery
+                if m_x == x:
+                    if m_y > y:
+                        direction_x = 0
+                        direction_y = speed
+                    else:
+                        direction_x = 0
+                        direction_y = -speed
+                else:
+                    d = ((m_y - y) ** 2 + (m_x - x) ** 2) ** 0.5
+                    direction_x = speed * ((m_x - x) / d)
+                    direction_y = speed * ((m_y - y) / d)
+                player.rect.x -= direction_x
+                player.rect.y -= direction_y
+        return super().battle_update(player)

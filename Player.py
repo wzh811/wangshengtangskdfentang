@@ -5,6 +5,7 @@ from Enchantment import *
 from Settings import *
 import pygame as pg
 from random import randint
+from itertools import cycle
 
 
 class Player(pg.sprite.Sprite):
@@ -12,10 +13,14 @@ class Player(pg.sprite.Sprite):
         super().__init__()
         # 玩家名=用户名
         self.name = name
-        self.index = 0
+        # 用于行走动画
+        self.indexes = None
+        self.index = 1
         self.images = [pg.transform.scale(pg.image.load(img), (PlayerSettings.playerWidth, PlayerSettings.playerHeight))
                        for img in GamePath.player]
         self.image = self.images[self.index]
+        self.walk_cd = 0
+        self.direction = 2
         # 用于处理等级不足无法开箱子的消息显示
         self.information = None
         # 玩家位置
@@ -24,7 +29,7 @@ class Player(pg.sprite.Sprite):
         # 用于处理玩家冲刺
         self.speed_up = False
         self.stamina = 100
-        # 用于处理对话
+        # 用于处理对话、购物
         self.talking = False
         # 开启玩家受伤
         self.damage = True
@@ -33,6 +38,9 @@ class Player(pg.sprite.Sprite):
         # 用于处理战斗
         self.battle = False
         # 读取玩家信息，没有玩家信息则初始化
+        if not os.path.isfile(GamePath.saves + "\\" + self.name + "\\" + "player.txt"):
+            with open(GamePath.saves + "\\" + self.name + "\\" + "player.txt", 'w'):
+                pass
         with open(GamePath.saves + "\\" + self.name + "\\" + "player.txt", 'r') as f:
             lines = f.readlines()
             if lines:
@@ -93,9 +101,9 @@ class Player(pg.sprite.Sprite):
                 f'天赋：{self.gift_point}',
                 f'体力：{int(self.stamina)}%'
                 ]
-        self.text = [pg.font.Font(GamePath.font, 18).render(t, True,
+        self.text = [pg.font.Font(GamePath.font, 20).render(t, True,
                                                             (255, 255, 0, 120)) for t in text]
-        self.bag_text = [pg.font.Font(GamePath.font, 18).render(f'{item}：{num}', True,
+        self.bag_text = [pg.font.Font(GamePath.font, 25).render(f'{item}：{num}', True,
                                                                 (255, 255, 0, 120)) for
                          item, num in self.bag.items()]
 
@@ -207,7 +215,8 @@ class Player(pg.sprite.Sprite):
                 if self.stamina > 100:
                     self.stamina = 100
         else:
-            self.bag_text = [pg.font.Font(GamePath.font, 18).render(f'{item}：{num}', True, (255, 255, 0, 120)) for
+            self.bag_text = [pg.font.Font(GamePath.font, 18).render(f'{item}：{num}', True,
+                                                                    (255, 255, 0, 120)) for
                              item, num in self.bag.items()]
             if self.speed_up:
                 self.stamina -= 1 - self.enchantment[5] / 10
@@ -225,6 +234,7 @@ class Player(pg.sprite.Sprite):
             # 控制玩家移动
             dx = 0
             dy = 0
+            self.walk_cd -= 1
             if keys[pg.K_w] and self.rect.top > 0:
                 dy -= self.speed
             if keys[pg.K_s] and self.rect.bottom < WindowSettings.height:
@@ -233,18 +243,70 @@ class Player(pg.sprite.Sprite):
                 dx -= self.speed
             if keys[pg.K_d] and self.rect.right < WindowSettings.width:
                 dx += self.speed
-            self.rect = self.rect.move(dx, dy)
+
+            # 碰撞检测，采用双方向分开检测，同时加入回弹防止卡住，比一般的取消移动更为流畅
+            if dx != 0:
+                self.rect = self.rect.move(dx, 0)
+                if pg.sprite.spritecollide(self, scene.obstacles, False, pg.sprite.collide_mask):
+                    ex_x = 1 if dx > 0 else -1
+                    self.rect = self.rect.move(-dx - ex_x, 0)
+                    dx = 0
+
+            if dy != 0:
+                self.rect = self.rect.move(0, dy)
+                if pg.sprite.spritecollide(self, scene.obstacles, False, pg.sprite.collide_mask):
+                    ex_y = 1 if dy > 0 else -1
+                    self.rect = self.rect.move(0, -dy - ex_y)
+                    dy = 0
+
+            # 行走动画，变向检测采用循环迭代，斜向走时方向会来回切换
+            if dx > 0:
+                if self.direction != 1:
+                    self.direction = 1
+                    self.indexes = cycle([6, 7, 8])
+            elif dx < 0:
+                if self.direction != 2:
+                    self.direction = 2
+                    self.indexes = cycle([3, 4, 5])
+            elif dy > 0:
+                if self.direction != 3:
+                    self.direction = 3
+                    self.indexes = cycle([0, 1, 2])
+            elif dy < 0:
+                if self.direction != 4:
+                    self.direction = 4
+                    self.indexes = cycle([9, 10, 11])
+
             if dx == 0 and dy == 0:
+                if self.direction == 1:
+                    self.indexes = cycle([7])
+                elif self.direction == 2:
+                    self.indexes = cycle([4])
+                elif self.direction == 3:
+                    self.indexes = cycle([1])
+                elif self.direction == 4:
+                    self.indexes = cycle([10])
+                self.direction = 0
+                self.index = next(self.indexes)
+                self.walk_cd = 0
                 try:
                     self.step.stop()
                     self.step = None
                 except:
                     pass
             elif self.step:
-                pass
+                if self.step.get_num_channels() == 0:
+                    self.step.play()
+                if self.walk_cd <= 0:
+                    self.index = next(self.indexes)
+                    self.walk_cd = 5/(self.speed//5)
             else:
                 self.step = pg.mixer.Sound(GamePath.sound['step'])
                 self.step.play()
+                if self.walk_cd <= 0:
+                    self.index = next(self.indexes)
+                    self.walk_cd = 5/(self.speed//5)
+
             if scene.type == SceneType.CITY:
                 # 开箱子
                 for chest in scene.chests:
@@ -277,6 +339,9 @@ class Player(pg.sprite.Sprite):
                 for i in scene.portals:
                     if i.CD <= 0:
                         i.reset()
+                        if self.step:
+                            self.step.stop()
+                            self.step = None
                         pg.event.post(pg.event.Event(GameEvent.EVENT_SWITCH))
                         self.rect.x, self.rect.y = WindowSettings.width // 2, WindowSettings.height // 2
 
@@ -301,7 +366,18 @@ class Player(pg.sprite.Sprite):
         return self.step
 
     def draw(self, window):
+        self.image = self.images[self.index]
         window.blit(self.image, self.rect)
+        # 渲染玩家体力条
+        stamina = pg.image.load(GamePath.stamina)
+        size = (stamina.get_width() // 20, stamina.get_height() // 80)
+        stamina_size = (int(stamina.get_width() * self.stamina / 100) // 20, stamina.get_height() // 80)
+        if stamina_size[0] > 0:
+            stamina = pg.transform.scale(stamina, stamina_size)
+            window.blit(stamina, (self.rect.centerx - 40, self.rect.centery - 50))
+        frame = pg.image.load(GamePath.frame)
+        frame = pg.transform.scale(frame, (size[0] + 4, size[1] + 4))
+        window.blit(frame, (self.rect.centerx - 42, self.rect.centery - 52))
 
     def fix_to_middle(self, dx, dy):
         self.rect.x -= dx

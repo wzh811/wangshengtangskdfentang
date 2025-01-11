@@ -7,6 +7,7 @@ import time
 from random import randint
 from Settings import *
 import pygame as pg
+import threading
 
 
 def battle(player, monster, window, scene_manager, fps, dfc=1.0):
@@ -36,9 +37,12 @@ def battle(player, monster, window, scene_manager, fps, dfc=1.0):
     monster.attack *= dfc
     monster.defence *= dfc
     monster.speed *= 0.875 + dfc * 0.125
+    # 地狱难度额外提高怪物属性
     if dfc > 1.8:
-        monster.attack *= 1.2
+        monster.attack *= 1.25
+        monster.HP *= 1.25
         monster.speed *= 1.1
+    monster.maxHP = monster.HP
 
     # 生成怪物
     sprites.add(monster)
@@ -54,8 +58,8 @@ def battle(player, monster, window, scene_manager, fps, dfc=1.0):
     boss_bullets1 = []
     boss_bullets2 = []
     bomb_circles = []
-    bomb_circle_count = 0
-    kill_bomb_circle = 0
+    bomb_circle_count = pg.USEREVENT + 10
+    kill_bomb_circle = pg.USEREVENT + 10
     cd = 5 if player.lvl < 4 else 4
 
     while True:
@@ -81,7 +85,11 @@ def battle(player, monster, window, scene_manager, fps, dfc=1.0):
             monster.kill()
             return 0
         # 怪物发射子弹
-        bullet3 = monster.battle_update(player)
+        if monster.lvl == 12:
+            bullet3 = monster.ai_update(player)
+            # 大语言模型辅助boss小洁出招
+        else:
+            bullet3 = monster.battle_update(player)
         if monster.lvl > 10:
             if monster.bullet_list1:
                 for i in monster.bullet_list1:
@@ -142,11 +150,35 @@ def battle(player, monster, window, scene_manager, fps, dfc=1.0):
                     boss_bullets2.remove(b)
                     b.kill()
 
-        # 显示玩家+怪物信息
+        # 按下e键时显示玩家+怪物信息
         offset = 0
-        for t in player.text:
-            window.blit(t, (1075, 20 + offset))
-            offset += 20
+        if keys[pg.K_e]:
+            for t in player.text:
+                window.blit(t, (1075, 20 + offset))
+                offset += 20
+            window.blit(monster.HP_text, (1075, 20 + offset))  # 以文本方式显示怪物血条
+        # 渲染玩家基本信息
+        infor_bg = pg.image.load(GamePath.icons[-1])
+        infor_bg = pg.transform.scale(infor_bg, (300, 40))
+        infor_bg.set_alpha(180)
+        font = pg.font.Font(GamePath.font, 30)
+        color = (255, 255, 255, 0)
+        window.blit(infor_bg, (0, 0))
+        attack_icon = pg.image.load(GamePath.icons[0])
+        attack_icon = pg.transform.scale(attack_icon, (45, 45))
+        a = font.render(str(player.attack), True, color)
+        window.blit(a, (50, 0))
+        defence_icon = pg.image.load(GamePath.icons[1])
+        defence_icon = pg.transform.scale(defence_icon, (40, 40))
+        d = font.render(str(player.defence), True, color)
+        window.blit(d, (150, 0))
+        speed_icon = pg.image.load(GamePath.icons[3])
+        speed_icon = pg.transform.scale(speed_icon, (40, 40))
+        s = font.render(str(player.speed), True, color)
+        window.blit(s, (250, 0))
+        window.blit(attack_icon, (0, 0))
+        window.blit(defence_icon, (100, 0))
+        window.blit(speed_icon, (200, 0))
         # 怪物血条
         if monster.lvl < 11 and monster.HP > 0:
             monster_HP_image = pg.image.load(GamePath.HPline[2])
@@ -160,7 +192,6 @@ def battle(player, monster, window, scene_manager, fps, dfc=1.0):
                                                                      MonsterSettings.monsterHP[monster.lvl] /
                                                                      (dfc * 3 - 1), 20))
             window.blit(monster_HP_image, (400, 20))
-        window.blit(monster.HP_text, (1075, 20 + offset))  # 以文本方式显示怪物血条
 
         # 玩家血条
         if player.HP / player.maxHP < 0.3 and player.HP > 0:
@@ -211,9 +242,9 @@ def battle(player, monster, window, scene_manager, fps, dfc=1.0):
                     bullets2.append(bullet2)
                     sprites.add(bullet2)
             if event.type == pg.KEYDOWN:
-                # 玩家无敌
+                # 玩家无敌开关
                 if event.key == pg.K_j:
-                    player.damage = False
+                    player.damage = not player.damage
                 # CTRL或SHIFT键加速(战斗中的加速效果比平时低，但所加的速度受到敏捷附魔的影响)
                 if event.key == pg.K_LCTRL or event.key == pg.K_LSHIFT:
                     add_speed = 5 + player.enchantment[5]
@@ -251,6 +282,7 @@ def battle(player, monster, window, scene_manager, fps, dfc=1.0):
                         player.attack += 4
                     player.bag["力量药水"][1] += 1
                     player.bag_update("力量药水", -1)
+                    pg.mixer.Sound(GamePath.sound['portion']).play()
                     if player.bag["力量药水"][1] == 1:
                         pg.time.set_timer(BattleEvent.Strength_time_over, 10000, loops=1)
                     else:
@@ -263,6 +295,7 @@ def battle(player, monster, window, scene_manager, fps, dfc=1.0):
                         player.HP = player.maxHP
                     player.bag["生命恢复药水"][1] += 10
                     player.bag_update("生命恢复药水", -1)
+                    pg.mixer.Sound(GamePath.sound['portion']).play()
                     if player.bag["生命恢复药水"][1] == 10:
                         pg.time.set_timer(BattleEvent.Life_add, 500, loops=10)
                     else:
@@ -273,6 +306,7 @@ def battle(player, monster, window, scene_manager, fps, dfc=1.0):
                         player.speed += 3
                     player.bag["速度药水"][1] += 1
                     player.bag_update("速度药水", -1)
+                    pg.mixer.Sound(GamePath.sound['portion']).play()
                     if player.bag["速度药水"][1] == 1:
                         pg.time.set_timer(BattleEvent.Speed_time_over, 7000, loops=1)
                     else:
@@ -283,28 +317,26 @@ def battle(player, monster, window, scene_manager, fps, dfc=1.0):
                         player.defence += 5
                     player.bag["抗性提升药水"][1] += 1
                     player.bag_update("抗性提升药水", -1)
+                    pg.mixer.Sound(GamePath.sound['portion']).play()
                     if player.bag["抗性提升药水"][1] == 1:
                         pg.time.set_timer(BattleEvent.Defence_time_over, 10000, loops=1)
                     else:
                         pg.time.set_timer(BattleEvent.Defence_time_over1, 10000, loops=1)
             # 清除爆炸动画
-            if 0 < event.type <= kill_bomb_circle:
+            if pg.USEREVENT + 10 <= event.type <= kill_bomb_circle:
                 for i in bomb_circles:
-                    print(i.index, kill_bomb_circle)
+                    # print(i.index, kill_bomb_circle)
                     if i.index <= kill_bomb_circle:
                         bomb_circles.remove(i)
                         i.kill()
             # buff结束
-            if event.type == BattleEvent.Strength_time_over:
+            if event.type == BattleEvent.Strength_time_over or event.type == BattleEvent.Strength_time_over1:
                 player.attack -= 5
+                if player.lvl == 10:
+                    player.attack -= 4
                 player.bag["力量药水"][1] -= 1
                 player.bag_update('力量药水', 0)
                 print('力量恢复')
-            if event.type == BattleEvent.Strength_time_over1:
-                player.attack -= 5
-                player.bag["力量药水"][1] -= 1
-                player.bag_update('力量药水', 0)
-                print('力量恢复1')
             if event.type == BattleEvent.Life_add:
                 player.HP += 1
                 if player.lvl == 10:
@@ -321,26 +353,20 @@ def battle(player, monster, window, scene_manager, fps, dfc=1.0):
                 player.bag["生命恢复药水"][1] -= 1
                 player.bag_update('生命恢复药水', 0)
                 print('生命恢复1')
-            if event.type == BattleEvent.Defence_time_over:
+            if event.type == BattleEvent.Defence_time_over or event.type == BattleEvent.Defence_time_over1:
                 player.defence -= 7
+                if player.lvl == 10:
+                    player.defence -= 5
                 player.bag["抗性提升药水"][1] -= 1
                 player.bag_update('抗性提升药水', 0)
                 print('防御恢复')
-            if event.type == BattleEvent.Defence_time_over1:
-                player.defence -= 7
-                player.bag["抗性提升药水"][1] -= 1
-                player.bag_update('抗性提升药水', 0)
-                print('防御恢复1')
-            if event.type == BattleEvent.Speed_time_over:
+            if event.type == BattleEvent.Speed_time_over or event.type == BattleEvent.Speed_time_over1:
                 player.speed -= 5
+                if player.lvl == 10:
+                    player.speed -= 3
                 player.bag["速度药水"][1] -= 1
                 player.bag_update('速度药水', 0)
                 print('速度恢复')
-            if event.type == BattleEvent.Speed_time_over1:
-                player.speed -= 5
-                player.bag["速度药水"][1] -= 1
-                player.bag_update('速度药水', 0)
-                print('速度恢复1')
 
         # 生机附魔的效果
         player.HP += player.enchantment[4] / fps
@@ -374,7 +400,7 @@ def battle(player, monster, window, scene_manager, fps, dfc=1.0):
                 if i.delete:
                     bomb_circle_count += 1
                     bomb_circle = Bomb(i.rect.x, i.rect.y, 3, index=bomb_circle_count)
-                    print(bomb_circle.index, 'bomb_circle_index')
+                    # print(bomb_circle.index, 'bomb_circle_index')
                     sprites.add(bomb_circle)
                     bomb_circles.append(bomb_circle)
                     pg.time.set_timer(bomb_circle.index, 200, loops=1)

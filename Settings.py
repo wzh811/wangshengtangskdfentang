@@ -26,7 +26,18 @@ class SceneSettings:
 class GamePath:
     game_enter = r'.\assets\menu\start.png'
 
-    player = [r'.\assets\player\player1.png']
+    player = [r'.\assets\player\forward0.png',
+              r'.\assets\player\forward1.png',
+              r'.\assets\player\forward2.png',
+              r'.\assets\player\left0.png',
+              r'.\assets\player\left1.png',
+              r'.\assets\player\left2.png',
+              r'.\assets\player\right0.png',
+              r'.\assets\player\right1.png',
+              r'.\assets\player\right2.png',
+              r'.\assets\player\back0.png',
+              r'.\assets\player\back1.png',
+              r'.\assets\player\back2.png']
 
     saves = r'.\saves'
 
@@ -34,7 +45,10 @@ class GamePath:
            r'.\assets\music\battle_scene.mp3',
            r'.\assets\music\city_scene.mp3',
            r'.\assets\music\city_scene2.mp3',
-           r'.\assets\music\wild_scene.mp3']
+           r'.\assets\music\wild_scene.mp3',
+           r'.\assets\music\win_scene.mp3',
+           r'.\assets\music\over_scene.mp3',
+           r'.\assets\music\boss_scene.mp3']
 
     sound = {
         'bomb': r'.\assets\sound\bomb.mp3',
@@ -49,7 +63,8 @@ class GamePath:
         'over': r'.\assets\sound\over.mp3',
         'player_be_hit': r'.\assets\sound\player_be_hit.mp3',
         'purchase': r'.\assets\sound\purchase.mp3',
-        'step': r'.\assets\sound\step.mp3'
+        'step': r'.\assets\sound\step.mp3',
+        'portion': r'.\assets\sound\portion.mp3',
     }
 
     voice = [
@@ -97,7 +112,8 @@ class GamePath:
         r'.\assets\tiles\ground3.png',
         r'.\assets\tiles\ground4.png',
         r'.\assets\tiles\ground5.png',
-        r'.\assets\tiles\ground6.png'
+        r'.\assets\tiles\ground6.png',
+        r'.\assets\tiles\path2.png'
     ]
 
     cityTiles = [
@@ -106,7 +122,8 @@ class GamePath:
         r'.\assets\tiles\city3.png',
         r'.\assets\tiles\city4.png',
         r'.\assets\tiles\city5.png',
-        r'.\assets\tiles\city6.png'
+        r'.\assets\tiles\city6.png',
+        r'.\assets\tiles\path1.png'
     ]
 
     battle = r'.\assets\tiles\battle.png'
@@ -114,6 +131,8 @@ class GamePath:
     portal = r'.\assets\portals\portal.png'
 
     chest = r'.\assets\obstacles\chest.png'
+    obstacles = [r'.\assets\obstacles\obstacle.png',
+                 r'.\assets\obstacles\barrier.png']
 
     menu = r'.\assets\menu\menu.png'
     menu_start = r'.\assets\menu\menu1.png'
@@ -133,6 +152,22 @@ class GamePath:
               r'.\assets\HP\HPline3.png',
               r'.\assets\HP\HPline4.png']
 
+    icons = [r'.\assets\icons\attack.png',
+             r'.\assets\icons\defence.png',
+             r'.\assets\icons\HP.png',
+             r'.\assets\icons\speed.png',
+             r'.\assets\icons\coin.png',
+             r'.\assets\icons\bg.png',]
+
+    portion = [r'.\assets\portion\strength_portion.png',
+               r'.\assets\portion\HP_portion.png',
+               r'.\assets\portion\speed_portion.png',
+               r'.\assets\portion\defence_portion.png']
+
+    frame = r'.\assets\XP\frame.png'
+    XPline = r'.\assets\XP\XPline.png'
+    stamina = r'.\assets\XP\stamina.png'
+
 
 class GameState(Enum):
     MAIN_MENU = 1
@@ -148,12 +183,14 @@ class GameState(Enum):
 class NPCSettings:
     NPCWidth = 120
     NPCHeight = 150
+    NPCx = [100, 300, 500, 1000, 300]
+    NPCy = [100, 100, 100, 100, 400]
 
 
 class BulletSettings:
     bulletWidth = [21, 30, 20, 400, 10, 40]
     bulletHeight = [7, 30, 20, 400, 6, 40]
-    bulletSpeed = [12, 0, 6, 0, 8, 0]
+    bulletSpeed = [15, 0, 6, 0, 8, 0]
     bombTimer = 50
     circleTimer = 90
 

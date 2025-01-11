@@ -1,11 +1,12 @@
 # -*- coding:utf-8 -*-
 
+import Objects
 import Map
 from NPC import NPC
 from Monster import Monster
+from Objects import modify_city_map
 from Portal import *
 import os
-import pygame as pg
 from Settings import *
 
 
@@ -19,6 +20,7 @@ class Scene:
         self.npcs = pg.sprite.Group()
         self.monsters = pg.sprite.Group()
         self.portals = pg.sprite.Group()
+        self.obstacles = pg.sprite.Group()
 
         self.window = window
         self.width = WindowSettings.width
@@ -72,6 +74,8 @@ class Scene:
             each.update(self.cameraX, self.cameraY)
         for each in self.portals.sprites():
             each.update(self.cameraX, self.cameraY)
+        for each in self.obstacles.sprites():
+            each.update(self.cameraX, self.cameraY)
         if self.type == SceneType.WILD or self.type == SceneType.CITY:
             for i in range(SceneSettings.tileXnum):
                 for j in range(SceneSettings.tileYnum):
@@ -85,6 +89,7 @@ class Scene:
         self.npcs.draw(self.window)
         self.portals.draw(self.window)
         self.monsters.draw(self.window)
+        self.obstacles.draw(self.window)
 
 
 class CityScene(Scene):
@@ -98,8 +103,12 @@ class CityScene(Scene):
         chests = Map.gen_chests(player.name)
         for i in chests:
             self.chests.add(i)
+        self.map = Map.load_city_map(player.name)
         xiaotong = NPC(0, player.name)
         xiaojie = NPC(1, player.name)
+        obstacles = [i for i in Map.gen_barrier()] + [i for i in Map.gen_city_obstacle(player_name=player.name)]
+        for j in obstacles:
+            self.obstacles.add(j)
         self.npcs.add(xiaotong)
         self.npcs.add(xiaojie)
         self.portals.add(Portal(self.width * 2 // 3, self.height * 2 // 3))
@@ -116,6 +125,9 @@ class WildScene(Scene):
         self.portals.add(Portal(self.width * 2 // 3, self.height * 2 // 3))
         self.monsters = None
         self.monsters = pg.sprite.Group()
+        if not os.path.isfile(GamePath.saves + "\\" + player.name + "\\" + "monsters.txt"):
+            m = open(GamePath.saves + "\\" + player.name + "\\" + "monsters.txt", 'w')
+            m.close()
         m = open(GamePath.saves + "\\" + player.name + "\\" + "monsters.txt")
         if m.readlines():
             monsters = Map.load_monsters(player_name=player.name)
@@ -125,6 +137,11 @@ class WildScene(Scene):
             for i in range(1, 11):
                 monster = Monster(i, player.name)
                 self.monsters.add(monster)
+        m.close()
+        self.map = Map.load_wild_map(player.name)
+        obstacles = [i for i in Objects.gen_barrier()] + [i for i in Objects.gen_wild_obstacle(player_name=player.name)]
+        for j in obstacles:
+            self.obstacles.add(j)
         self.npcs.add(NPC(2, player.name))
         self.npcs.add(NPC(3, player.name))
         self.npcs.add(NPC(4, player.name))

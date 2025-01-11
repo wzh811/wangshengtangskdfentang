@@ -46,7 +46,7 @@ def fade_in_font(window, text, font, start_alpha, finish_alpha, interval):
         window.fill((0, 0, 0))
         surface.set_alpha(alpha)
         surface.blit(t, (0, 0))
-        window.blit(surface, ((WindowSettings.width-width)//2, (WindowSettings.height-height)//2))
+        window.blit(surface, ((WindowSettings.width - width) // 2, (WindowSettings.height - height) // 2))
         alpha += interval
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -73,7 +73,7 @@ def fade_out_font(window, text, font, start_alpha, finish_alpha, interval):
         pg.display.update()
 
 
-def cutscene(window,player_name):
+def cutscene(window, player_name):
     window.fill((0, 0, 0))
     pg.display.update()
     texts = f'''
@@ -132,6 +132,6 @@ def elite_win(window, player_name):
         fade_out_font(window, text, font, 255, 0, 1)
         pg.time.wait(500)
     hutao = pg.image.load(GamePath.hutao)
-    fade_in(window, hutao,0, 255, 1)
+    fade_in(window, hutao, 0, 255, 1)
     pg.time.wait(2000)
     fade_out(window, hutao, 255, 0, 0.5)

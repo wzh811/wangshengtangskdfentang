@@ -57,10 +57,6 @@ class Bomb(Bullet):
             pg.mixer.Sound(GamePath.sound['bomb']).play()
             self.delete = True
 
-    def fix_to_middle(self, dx, dy):
-        self.rect.x -= dx
-        self.rect.y -= dy
-
 
 # 环形子弹（仅用于boss小洁的回旋镖）
 class Circle(Bullet):

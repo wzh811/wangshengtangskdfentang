@@ -1,4 +1,4 @@
-# -*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-d
 
 import os
 from Run import run_game
@@ -20,8 +20,10 @@ if __name__ == "__main__":
     import Account
     player_name = Account.account_manager()
     if player_name:
-        # 初始化游戏
         os.chdir(ori_dir)
+        if not os.path.isdir('saves\\'+player_name):
+            os.mkdir('saves\\'+player_name)
+        # 初始化游戏
         pg.init()
         # 初始化背景音乐
         pg.mixer.init()

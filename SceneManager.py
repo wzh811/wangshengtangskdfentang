@@ -7,6 +7,7 @@ from DialogBox import DialogBox
 import Scene
 import ShoppingBox
 from Enchantment import *
+import pyautogui as ui
 
 
 class SceneManager:
@@ -21,7 +22,8 @@ class SceneManager:
         for npc in self.scene.npcs.sprites():
             if self.scene.shoppingBox:
                 self.scene.shoppingBox.render()
-            elif pg.sprite.collide_rect(npc, player) and npc.can_talk() and npc.talked:
+            elif pg.sprite.collide_rect(npc, player) and npc.talked:
+                npc.talked = False
                 npc.talking = True
                 player.talking = True
                 # 小米，消耗天赋点和资金增加属性
@@ -67,11 +69,11 @@ class SceneManager:
             if self.state == GameState.GAME_PLAY_CITY:
                 p = npc.talked
                 if_talked.append(p)
-            if pg.sprite.collide_rect(player, npc) and npc.can_talk():
-                npc.talking = True
-                player.talking = True
+            if pg.sprite.collide_rect(player, npc) and keys[pg.K_f]:
                 dialogBoxTemp = None
-                if npc.id == 0:
+                if npc.id == 0 and player.talked < 2:
+                    player.talking = True
+                    npc.talking = True
                     dialogBoxTemp = DialogBox(self.window, GamePath.NPC, 0,
                                               [['主人，我是小彤。是你的马桶变的！',
                                                 '主人天天往我肚子里放脏东西，人家实在是受不了啊！'],
@@ -79,7 +81,9 @@ class SceneManager:
                                                 "接招吧，旋风水龙卷！"]])
                     voice = pg.mixer.Sound(GamePath.voice[0])
 
-                elif npc.id == 1:
+                elif npc.id == 1 and player.talked < 2:
+                    player.talking = True
+                    npc.talking = True
                     dialogBoxTemp = DialogBox(self.window, GamePath.NPC, 1,
                                               [['主人，我是小洁。是你的洗衣机变的！',
                                                 '主人天天往我肚子里放脏衣服，人家实在是受不了啊！'],
@@ -87,6 +91,8 @@ class SceneManager:
                                                 "接招吧，轰隆隆冲击波！！"]])
                     voice = pg.mixer.Sound(GamePath.voice[1])
                 elif npc.id == 2 and not npc.talked:
+                    player.talking = True
+                    npc.talking = True
                     dialogBoxTemp = DialogBox(self.window, GamePath.NPC, 2,
                                               [['主人，我是小米。是你的手机变的！',
                                                 '主人对我很好，我也很喜欢主人'],
@@ -95,6 +101,8 @@ class SceneManager:
                     voice = pg.mixer.Sound(GamePath.voice[2])
 
                 elif npc.id == 3 and not npc.talked:
+                    player.talking = True
+                    npc.talking = True
                     dialogBoxTemp = DialogBox(self.window, GamePath.NPC, 3,
                                               [['主人，我是小花。是你的电脑变的！',
                                                 '主人对我很好，我也很喜欢主人'],
@@ -102,6 +110,8 @@ class SceneManager:
                                                 "主人可以在我这里购买一次性道具哦~"]])
                     voice = pg.mixer.Sound(GamePath.voice[3])
                 elif npc.id == 4 and not npc.talked:
+                    player.talking = True
+                    npc.talking = True
                     dialogBoxTemp = DialogBox(self.window, GamePath.NPC, 4,
                                               [['主人，我是小白。是你的平板变的！',
                                                 '主人对我很好，我也很喜欢主人'],
@@ -141,10 +151,22 @@ class SceneManager:
     def check_event_boss(self, player, keys):
         if player.talked >= 2:
             for npc in self.scene.npcs.sprites():
-                if pg.sprite.collide_rect(player, npc) and npc.can_talk():
-                    if npc.id == 0:
+                if pg.sprite.collide_rect(player, npc):
+                    # 大语言模型对话
+                    if npc.id == 0 and keys[pg.K_e]:
+                        message = ui.prompt(text='你果然还是来了!还有什么遗言吗？', title='小彤')
+                        player.talking = True
+                        npc.talking = True
+                        while message:
+                            reply = chat(message)
+                            message = ui.prompt(text=reply, title='小彤')
+                        player.talking = False
+                        npc.talking = False
+                        return None
+                    # 进入boss战
+                    elif npc.id == 0 and keys[pg.K_f]:
                         boss = XiaoTong(player.name)
-                    elif npc.id == 1:
+                    elif npc.id == 1 and keys[pg.K_f]:
                         boss = XiaoJie(player.name)
                     else:
                         boss = None
@@ -167,16 +189,22 @@ class SceneManager:
                     pg.mixer.music.play(-1)
             case GameState.GAME_BATTLE:
                 self.scene = Scene.BattleScene(self.window, self.player, monster=monster)
-                pg.mixer.music.load(GamePath.bgm[1])
-                pg.mixer.music.play(-1)
+                if monster.lvl < 11:
+                    pg.mixer.music.load(GamePath.bgm[1])
+                    pg.mixer.music.play(-1)
+                else:
+                    pg.mixer.music.load(GamePath.bgm[7])
+                    pg.mixer.music.play(-1)
             case GameState.GAME_OVER:
                 self.scene = Scene.OverScene(self.window, self.player)
                 pg.mixer.stop()
-                pg.mixer.Sound(GamePath.sound['over']).play()
+                pg.mixer.music.load(GamePath.bgm[6])
+                pg.mixer.music.play(-1)
             case GameState.GAME_WIN:
                 self.scene = Scene.WinScene(self.window, self.player)
                 pg.mixer.stop()
-                pg.mixer.Sound(GamePath.sound['level_up']).play()
+                pg.mixer.music.load(GamePath.bgm[5])
+                pg.mixer.music.play(1)
             case GameState.GAME_PAUSE:
                 self.scene = Scene.PauseScene(self.window, self.player)
             case GameState.MAIN_MENU:

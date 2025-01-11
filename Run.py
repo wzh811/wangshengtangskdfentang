@@ -6,9 +6,10 @@ from DialogBox import DialogBox
 import os
 from BattleBox import battle
 from Animation import *
+import pyautogui as ui
 
 
-def run_game(player_name_input, fps, dfc, direc):
+def run_game(player_name, fps, dfc, direc):
     os.chdir(direc)
     # 创建游戏窗口
     window = pg.display.set_mode((WindowSettings.width, WindowSettings.height))
@@ -26,7 +27,7 @@ def run_game(player_name_input, fps, dfc, direc):
 
     # 创建玩家
     sprites = pg.sprite.Group()
-    player = Player(WindowSettings.width // 2, WindowSettings.height // 2, name=player_name_input)
+    player = Player(WindowSettings.width // 2, WindowSettings.height // 2, name=player_name)
     sprites.add(player)
 
     # 清空buff槽
@@ -149,18 +150,83 @@ def run_game(player_name_input, fps, dfc, direc):
         match sceneManager.state:
             # 大地图界面
             case GameState.GAME_PLAY_WILD | GameState.GAME_PLAY_CITY:
-                # 显示玩家信息
-                if not player.talking:
+                # 按住e键显示玩家信息
+                if not player.talking and keys[pg.K_e]:
                     offset = 0
                     for t in player.text:
                         window.blit(t, (1075, 20 + offset))
                         offset += 20
+                    portion_bg = pg.image.load(GamePath.icons[-1])
+                    portion_bg = pg.transform.scale(portion_bg, (800, 30))
+                    portion_bg.set_alpha(180)
+                    window.blit(portion_bg, (45, 700))
                     offset = 0
                     for t in player.bag_text:
                         window.blit(t, (45 + offset, 700))
                         offset += 200
+                elif not player.talking:
+                    # 渲染玩家拥有的药水信息
+                    portion_bg = pg.image.load(GamePath.icons[-1])
+                    portion_bg = pg.transform.scale(portion_bg, (800, 30))
+                    portion_bg.set_alpha(180)
+                    window.blit(portion_bg, (45, 700))
+                    offset = 0
+                    for i, t in enumerate(player.bag_text):
+                        picture = pg.image.load(GamePath.portion[i])
+                        picture = pg.transform.scale(picture, (40, 40))
+                        window.blit(t, (45 + offset, 700))
+                        window.blit(picture, (45 + offset, 650))
+                        offset += 200
+                    # 渲染玩家基本信息
+                    infor_bg = pg.image.load(GamePath.icons[-1])
+                    infor_bg = pg.transform.scale(infor_bg, (580, 40))
+                    infor_bg.set_alpha(180)
+                    font = pg.font.Font(GamePath.font, 30)
+                    color = (255, 255, 255, 0)
+                    window.blit(infor_bg, (0, 0))
+                    attack_icon = pg.image.load(GamePath.icons[0])
+                    attack_icon = pg.transform.scale(attack_icon, (45, 45))
+                    a = font.render(str(player.attack), True, color)
+                    window.blit(a, (50, 0))
+                    defence_icon = pg.image.load(GamePath.icons[1])
+                    defence_icon = pg.transform.scale(defence_icon, (40, 40))
+                    d = font.render(str(player.defence), True, color)
+                    window.blit(d, (150, 0))
+                    HP_icon = pg.image.load(GamePath.icons[2])
+                    HP_icon = pg.transform.scale(HP_icon, (40, 40))
+                    h = font.render(str(round(player.HP, 1)), True, color)
+                    window.blit(h, (250, 0))
+                    speed_icon = pg.image.load(GamePath.icons[3])
+                    speed_icon = pg.transform.scale(speed_icon, (40, 40))
+                    s = font.render(str(player.speed), True, color)
+                    window.blit(s, (350, 0))
+                    coin_icon = pg.image.load(GamePath.icons[4])
+                    coin_icon = pg.transform.scale(coin_icon, (40, 40))
+                    c = font.render(str(player.money), True, color)
+                    window.blit(c, (450, 0))
+                    window.blit(attack_icon, (0, 0))
+                    window.blit(defence_icon, (100, 0))
+                    window.blit(HP_icon, (200, 0))
+                    window.blit(speed_icon, (300, 0))
+                    window.blit(coin_icon, (400, 0))
+                    # 渲染经验条
+                    XPline = pg.image.load(GamePath.XPline)
+                    if player.lvl < 10:
+                        max_xp = PlayerSettings.playerXP[player.lvl+1]
+                    else:
+                        max_xp = player.xp
+                    if player.xp <= 0:
+                        XPline = pg.transform.scale(XPline, (1, 20))
+                    else:
+                        XPline = pg.transform.scale(XPline, (int(player.xp / max_xp * 400), 20))
+                    XPline.set_alpha(180)
+                    window.blit(XPline, (600, 0))
+                    frame = pg.image.load(GamePath.frame)
+                    frame = pg.transform.scale(frame, (400, 20))
+                    window.blit(frame, (600, 0))
+                # 与宝箱交互产生的信息
                 if player.information:
-                    window.blit(player.information[0], (0, 0))
+                    window.blit(player.information[0], (20, 70))
                     player.information[1] -= 1
                     if player.information[1] <= 0:
                         player.information = []
@@ -216,16 +282,8 @@ def run_game(player_name_input, fps, dfc, direc):
                                     lines[0] = f'0,2\n'
                                     n.writelines(lines)
                                     n.truncate()
-                                    if lines[1] == '1,2\n':
-                                        # 游戏胜利
-                                        if dfc < 1.5:
-                                            sceneManager.flush_scene(GameState.GAME_WIN)
-                                            sceneManager.render()
-                                            common_win(window, player.name)
-                                        else:
-                                            sceneManager.flush_scene(GameState.GAME_WIN)
-                                            sceneManager.render()
-                                            elite_win(window, player.name)
+                                    # 游戏胜利
+                                    win = True if lines[0] == '0,2\n' else False
                             # boss小洁
                             elif boss.lvl == 12:
                                 with open(GamePath.saves + "\\" + player_name + "\\" + "NPCs.txt", 'r+') as n:
@@ -234,22 +292,23 @@ def run_game(player_name_input, fps, dfc, direc):
                                     lines[1] = f'1,2\n'
                                     n.writelines(lines)
                                     n.truncate()
-                                    if lines[0] == '0,2\n':
-                                        # 游戏胜利
-                                        if dfc < 1.5:
-                                            sceneManager.flush_scene(GameState.GAME_WIN)
-                                            sceneManager.render()
-                                            common_win(window, player.name)
-                                        else:
-                                            sceneManager.flush_scene(GameState.GAME_WIN)
-                                            sceneManager.render()
-                                            elite_win(window, player.name)
+                                    # 游戏胜利
+                                    win = True if lines[0] == '0,2\n' else False
+                            if win:
+                                if dfc < 1.5:
+                                    sceneManager.flush_scene(GameState.GAME_WIN)
+                                    sceneManager.render()
+                                    common_win(window, player.name)
+                                else:
+                                    sceneManager.flush_scene(GameState.GAME_WIN)
+                                    sceneManager.render()
+                                    elite_win(window, player.name)
                             player.kill()
                             sprites.empty()
                             del sceneManager
                             # 重新创建玩家
                             player = Player(WindowSettings.width // 2, WindowSettings.height // 2,
-                                            name=player_name_input)
+                                            name=player_name)
                             sprites.add(player)
                             # 恢复玩家信息
                             with open(GamePath.saves + "\\" + player.name + "\\" + "player.txt", 'r') as p:
@@ -295,23 +354,24 @@ def run_game(player_name_input, fps, dfc, direc):
                 # 继续对话
                 elif sceneManager.state == GameState.GAME_PLAY_CITY and player.talking:
                     sceneManager.render()
-                    cur_text = sceneManager.continue_talking(player, keys, dialogBox, text_count)
-                    text_count = cur_text
-                    # 结束对话
-                    if text_count == -1:
-                        for npc in sceneManager.scene.npcs.sprites():
-                            if npc.talking:
-                                npc.talking = False
+                    if dialogBox:
+                        cur_text = sceneManager.continue_talking(player, keys, dialogBox, text_count)
+                        text_count = cur_text
+                        # 结束对话
+                        if text_count == -1:
+                            for npc in sceneManager.scene.npcs.sprites():
+                                if npc.talking:
+                                    npc.talking = False
+                                    player.talking = False
+                                    npc.reset_talk_cd()
+                                    print("退出对话")
+                                    dialogBox = None
+                                    text_count = 0
+                                    break
+                            else:
                                 player.talking = False
-                                npc.reset_talk_cd()
-                                print("退出对话")
                                 dialogBox = None
                                 text_count = 0
-                                break
-                        else:
-                            player.talking = False
-                            dialogBox = None
-                            text_count = 0
 
                 # 野外场景
                 elif sceneManager.state == GameState.GAME_PLAY_WILD and not player.talking:
@@ -344,7 +404,7 @@ def run_game(player_name_input, fps, dfc, direc):
                             del sceneManager
                             # 重新创建玩家
                             player = Player(WindowSettings.width // 2, WindowSettings.height // 2,
-                                            name=player_name_input)
+                                            name=player_name)
                             sprites.add(player)
                             # 恢复玩家信息
                             with open(GamePath.saves + "\\" + player.name + "\\" + "player.txt", 'r') as p:
