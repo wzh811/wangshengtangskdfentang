@@ -2,6 +2,8 @@
 
 队员：王梓衡2024533079[项目主页](https://github.com/wzh811/wangshengtangskdfentang/)
 
+[exe版本](https://github.com/wzh811/wangshengtangskdfentang/releases)
+
 **Requirements(第三方库):openai(相信助教一定装好了),pyautogui,deep_translator**
 
 pip install pyautogui
