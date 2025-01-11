@@ -121,6 +121,9 @@ class SceneManager:
                 if voice:
                     voice.play()
                 if dialogBoxTemp:
+                    if player.speed_up:
+                        player.speed -= 10
+                        player.speed_up = False
                     dialogBoxTemp.render()
                     npc.talked = True
                     print('渲染对话框')
