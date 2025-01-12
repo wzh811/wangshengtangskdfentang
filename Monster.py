@@ -263,7 +263,7 @@ class XiaoJie(Monster):
     def ai_update(self, player):
         global dec
         self.knife_timer -= 1
-        if self.knife_timer == 20:
+        if self.knife_timer == 40:
             # 多线程获取出招
             deci = DecThread((self.HP / self.maxHP * 100, player.HP / player.maxHP * 100,
                               player.rect.center, self.rect.center), q=dec_queue)
