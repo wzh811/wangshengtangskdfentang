@@ -66,6 +66,8 @@ class Scene:
         return WindowSettings.height * WindowSettings.outdoorScale
 
     def render(self):
+        for each in self.obstacles.sprites():
+            each.update(self.cameraX, self.cameraY)
         for each in self.npcs.sprites():
             each.update(self.cameraX, self.cameraY)
         for each in self.chests.sprites():
@@ -73,8 +75,6 @@ class Scene:
         for each in self.monsters.sprites():
             each.update(self.cameraX, self.cameraY)
         for each in self.portals.sprites():
-            each.update(self.cameraX, self.cameraY)
-        for each in self.obstacles.sprites():
             each.update(self.cameraX, self.cameraY)
         if self.type == SceneType.WILD or self.type == SceneType.CITY:
             for i in range(SceneSettings.tileXnum):
